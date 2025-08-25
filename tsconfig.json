@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES5",
+    "target": "ES2015",
+    "lib": ["ES2015", "ES2021.WeakRef"],
+    "downlevelIteration": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "types": [""]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]

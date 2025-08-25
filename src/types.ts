@@ -1,3 +1,7 @@
+// all exported types
+
+import { NextFunction, Request, Response } from "express";
+
 export type ExpressRouterMethodKey =
   | "GET"
   | "POST"
@@ -5,16 +9,10 @@ export type ExpressRouterMethodKey =
   | "DELETE"
   | "PATCH"
   | "OPTIONS"
-  | "HEAD";
+  | "HEAD"
+  | "USE";
 
-export type ExpressRouterMethods =
-  | "get"
-  | "put"
-  | "post"
-  | "delete"
-  | "options"
-  | "patch"
-  | "head";
+export type ExpressRouterMethods = Lowercase<ExpressRouterMethodKey>;
 
 export const methodResolve: Record<
   ExpressRouterMethodKey,
@@ -27,11 +25,12 @@ export const methodResolve: Record<
   OPTIONS: "options",
   PATCH: "patch",
   HEAD: "head",
+  USE: "use",
 } as const;
 
 export type RouteDefinition = {
   /**
-   * Express.js HTTP method
+   * Express.js HTTP method.
    */
   method: ExpressRouterMethodKey;
 
@@ -47,3 +46,11 @@ export type RouteDefinition = {
 };
 
 export type Class<T> = new (...args: any[]) => T;
+
+export type HttpHeaders = Record<string, string>;
+
+export type ExpressMiddlewareFn = (
+  $1: Request,
+  $2: Response,
+  $3: NextFunction,
+) => void;

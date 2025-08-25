@@ -1,11 +1,28 @@
 import { Router } from "express";
 import { _InjectableDeps, _resolve } from "./injectable";
-import { Class, RouteDefinition, methodResolve } from "./types";
+import { Class, RouteDefinition, methodResolve } from "../types";
 import { _getRoutes } from "./route";
+import { Sapling } from "../helper/sapling";
+import { Html404ErrorPage } from "../html/404";
+import { ResponseEntity, RedirectView } from "../helper";
 
 const _usedPrefixes = new Set<string>();
 
 export const _ControllerRegistry = new WeakMap<Function, Router>();
+
+type ControllerProps =
+  | {
+      /**
+       * Optional URL prefix applied to all routes in the controller. Defaults to "".
+       */
+      prefix?: string;
+
+      /**
+       * Optional array of dependencies to be injected into the constructor that are `@Injectable`
+       */
+      deps?: Array<Class<any>>;
+    }
+  | undefined;
 
 /**
  * Registers a class as an HTTP controller and registers its routes.
@@ -14,18 +31,13 @@ export const _ControllerRegistry = new WeakMap<Function, Router>();
  * @param [deps] Optional array of dependencies to be injected into the constructor that are `@Injectable`
  */
 export function Controller(
-  {
-    prefix = "",
-    deps = [],
-  }: {
-    prefix?: string;
-    deps?: Array<Class<any>>;
-  } = {
+  { prefix = "", deps = [] }: ControllerProps = {
     prefix: "",
     deps: [],
   },
 ): ClassDecorator {
   return (target: Function) => {
+    console.log("yooo");
     const targetClass = target as Class<any>;
 
     if (_usedPrefixes.has(prefix)) {
@@ -55,7 +67,33 @@ export function Controller(
       }
 
       const methodName = methodResolve[method];
-      router[methodName](fp, fn.bind(controllerInstance));
+      router[methodName](fp, async (request, response, next) => {
+        const result = await fn.bind(controllerInstance)(
+          request,
+          response,
+          next,
+        );
+
+        if (result instanceof ResponseEntity) {
+          response
+            .contentType("application/json")
+            .status(result.getStatusCode())
+            .set(result.getHeaders())
+            .send(Sapling.serialize(result.getBody()));
+          return;
+        }
+
+        if (result instanceof RedirectView) {
+          response.redirect(result.getUrl());
+          return;
+        }
+
+        if (!response.writableEnded) {
+          response
+            .status(404)
+            .send(Html404ErrorPage(`Cannot ${methodName.toUpperCase()} ${fp}`));
+        }
+      });
     }
 
     _ControllerRegistry.set(targetClass, router);

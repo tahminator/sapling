@@ -1,7 +1,11 @@
-import { Class } from "./types";
+import { IterableWeakMap } from "../../lib/weakmap";
+import { Class } from "../types";
 
-export const _InjectableRegistry = new Map<Class<any>, any>();
-export const _InjectableDeps = new Map<Class<any>, Array<Class<any>>>();
+export const _InjectableRegistry = new WeakMap<Class<any>, any>();
+export const _InjectableDeps = new IterableWeakMap<
+  Class<any>,
+  Array<Class<any>>
+>();
 
 /**
  * Mark the class as an injectable to be handled by Sapling. The class can now be

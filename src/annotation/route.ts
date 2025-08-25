@@ -1,4 +1,4 @@
-import { RouteDefinition, ExpressRouterMethodKey } from "./types";
+import { RouteDefinition, ExpressRouterMethodKey } from "../types";
 
 const _routeStore = new WeakMap<Function, RouteDefinition[]>();
 
@@ -81,6 +81,15 @@ export const PATCH = (path: string | undefined = "") =>
 export const HEAD = (path: string | undefined = "") =>
   _Route({
     method: "HEAD",
+    path,
+  });
+
+/**
+ * Register a middleware route on the given path (default "") for the given controller.
+ */
+export const Middleware = (path: string | undefined = "") =>
+  _Route({
+    method: "USE",
     path,
   });
 
