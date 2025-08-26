@@ -37,7 +37,6 @@ export function Controller(
   },
 ): ClassDecorator {
   return (target: Function) => {
-    console.log("yooo");
     const targetClass = target as Class<any>;
 
     if (_usedPrefixes.has(prefix)) {

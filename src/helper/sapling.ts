@@ -1,4 +1,4 @@
-import { Router } from "express";
+import e, { Router } from "express";
 import { _ControllerRegistry } from "../annotation/controller";
 import { Class, ExpressMiddlewareFn } from "../types";
 
@@ -57,6 +57,10 @@ export class Sapling {
           next();
         }
 
+        if (request.headers["content-type"] !== "application/json") {
+          next();
+        }
+
         if (typeof request.body === "string") {
           request.body = Sapling.deserialize(request.body);
         } else if (typeof request.body === "object") {
@@ -69,6 +73,23 @@ export class Sapling {
         next(err);
       }
     };
+  }
+
+  /**
+   * Register your application with all the necessary middlewares and logics for Sapling to function.
+   *
+   * @example```ts
+   * import { Sapling } from "@tahminator/sapling";
+   * import express from "express";
+   *
+   * const app = express();
+   *
+   * app.registerApp(app);
+   * ```
+   */
+  static registerApp(app: e.Express): void {
+    app.use(e.text({ type: "application/json" }));
+    app.use(this.json());
   }
 
   /**

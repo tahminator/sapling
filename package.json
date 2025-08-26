@@ -1,8 +1,7 @@
 {
-  "name": "sapling",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.ts",
+  "name": "@tahminator/sapling",
+  "version": "1.0.2",
+  "description": "A library to help you write cleaner Express.js code",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,6 +9,11 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.12.4",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "dependencies": {
     "@types/express": "^5.0.3",
     "express": "^5.1.0"

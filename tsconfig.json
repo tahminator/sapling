@@ -9,9 +9,9 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmit": true,
     "esModuleInterop": true,
-    "types": [""]
+    "declaration": true,
+    "outDir": "./dist"
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]
