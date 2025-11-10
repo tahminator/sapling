@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@tahminator/sapling':
-        specifier: ^1.1.0
-        version: 1.1.0
+        specifier: ^1.1.1
+        version: 1.1.1
       '@types/express':
         specifier: ^5.0.5
         version: 5.0.5
@@ -189,8 +189,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@tahminator/sapling@1.1.0':
-    resolution: {integrity: sha512-FS4Xk3LHautHm//RKk4jNEPU6TRqUFgekhgbVxKhDDWiuAje/vmDgnn6uAJyZvOSsgDdOXq9SbVxJJ7pBCf7vw==}
+  '@tahminator/sapling@1.1.1':
+    resolution: {integrity: sha512-lEzIDcuChF9bEQp0fDEX8B+Q69tUcW7QqonTwnRwRxY8Jy48YBruUCc2nsOi1ne/ugDk3rvhe3zJeyACNCf/hw==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -608,7 +608,7 @@ snapshots:
   '@esbuild/win32-x64@0.25.12':
     optional: true
 
-  '@tahminator/sapling@1.1.0':
+  '@tahminator/sapling@1.1.1':
     dependencies:
       '@types/express': 5.0.5
       express: 5.1.0

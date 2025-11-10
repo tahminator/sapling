@@ -6,8 +6,8 @@ import {
   HttpStatus,
   POST,
   ResponseEntity,
+  ResponseStatusError,
 } from "@tahminator/sapling";
-import { ResponseStatusError } from "@tahminator/sapling/dist/src/helper/error";
 import { Request } from "express";
 import z from "zod";
 

@@ -16,13 +16,11 @@ Sapling.registerApp(app);
 const controllers: Class<any>[] = [HelloWorldController, TodoController];
 controllers.map(Sapling.resolve).forEach((r) => app.use(r));
 
-Sapling.loadResponseStatusErrorMiddleware(app, (err, req, res, next) => {
-  res.status(err.status).json({
-    success: false,
-    message: err.message,
-  });
-});
-app.use(ErrorMiddleware.fn);
+Sapling.loadResponseStatusErrorMiddleware(
+  app,
+  ErrorMiddleware.responseStatusErrorMiddleware,
+);
+app.use(ErrorMiddleware.anyErrorMiddleware);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "dist")));

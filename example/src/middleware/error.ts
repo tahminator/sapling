@@ -1,3 +1,4 @@
+import { ResponseStatusError } from "@tahminator/sapling";
 import { Request, Response, NextFunction } from "express";
 
 export type ErrorResponse = {
@@ -6,7 +7,19 @@ export type ErrorResponse = {
 };
 
 export class ErrorMiddleware {
-  static fn(
+  static responseStatusErrorMiddleware(
+    err: ResponseStatusError,
+    _req: Request,
+    res: Response,
+    _next: NextFunction,
+  ) {
+    res.status(err.status).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+  static anyErrorMiddleware(
     err: unknown,
     _req: Request,
     res: Response,
