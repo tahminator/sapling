@@ -1,0 +1,24 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "tsx --watch src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "dependencies": {
+    "@tahminator/sapling": "^1.1.0",
+    "@types/express": "^5.0.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "postgres": "^3.4.7",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  }
+}

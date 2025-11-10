@@ -1,0 +1,6 @@
+CREATE TABLE "Todo" (
+  id SERIAL PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  description TEXT NULL,
+  completed BOOLEAN NOT NULL DEFAULT false
+);
