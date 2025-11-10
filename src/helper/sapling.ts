@@ -54,11 +54,11 @@ export class Sapling {
     return (request, _response, next) => {
       try {
         if (!request.body) {
-          next();
+          return next();
         }
 
         if (request.headers["content-type"] !== "application/json") {
-          next();
+          return next();
         }
 
         if (typeof request.body === "string") {

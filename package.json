@@ -3,7 +3,8 @@
   "version": "1.0.3",
   "description": "A library to help you write cleaner Express.js code",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
