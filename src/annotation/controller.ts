@@ -59,10 +59,16 @@ export function Controller(
       if (typeof fn !== "function") continue;
 
       const fp = prefix + path;
-      if (usedPaths.has(fp)) {
+      
+      // Only check for duplicates on non-middleware routes
+      // Middleware (USE) can have duplicate paths
+      if (method !== "USE" && usedPaths.has(fp)) {
         throw new Error(
           `Duplicate route path "${fp}" detected in controller "${target.name}"`,
         );
+      }
+      if (method !== "USE") {
+        usedPaths.add(fp);
       }
 
       const methodName = methodResolve[method];
