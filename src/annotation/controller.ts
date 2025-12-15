@@ -71,6 +71,11 @@ export function Controller(
           next,
         );
 
+        // Middleware (USE) should not send responses, just call next()
+        if (method === "USE") {
+          return;
+        }
+
         if (result instanceof ResponseEntity) {
           response
             .contentType("application/json")
