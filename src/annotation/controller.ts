@@ -6,8 +6,6 @@ import { Sapling } from "../helper/sapling";
 import { Html404ErrorPage } from "../html/404";
 import { ResponseEntity, RedirectView } from "../helper";
 
-const _usedPrefixes = new Set<string>();
-
 export const _ControllerRegistry = new WeakMap<Function, Router>();
 
 type ControllerProps =
@@ -39,13 +37,6 @@ export function Controller(
   return (target: Function) => {
     const targetClass = target as Class<any>;
 
-    if (_usedPrefixes.has(prefix)) {
-      throw new Error(
-        `The prefix "${prefix}" is already in use by another constructor. Please resolve this issue.`,
-      );
-    }
-    _usedPrefixes.add(prefix);
-
     const router = Router();
     const routes: readonly RouteDefinition[] = _getRoutes(target);
 
@@ -60,7 +51,7 @@ export function Controller(
 
       const fp = prefix + path;
       const routeKey = method + " " + fp;
-      
+
       // Only check for duplicates on non-middleware routes
       // Middleware (USE) can have duplicate paths, and different HTTP methods can share paths
       if (method !== "USE" && usedRoutes.has(routeKey)) {
