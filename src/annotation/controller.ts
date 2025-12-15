@@ -49,7 +49,7 @@ export function Controller(
     const router = Router();
     const routes: readonly RouteDefinition[] = _getRoutes(target);
 
-    const usedPaths = new Set<string>();
+    const usedRoutes = new Set<string>();
 
     _InjectableDeps.set(targetClass, deps);
     const controllerInstance = _resolve(targetClass);
@@ -59,16 +59,17 @@ export function Controller(
       if (typeof fn !== "function") continue;
 
       const fp = prefix + path;
+      const routeKey = method + " " + fp;
       
       // Only check for duplicates on non-middleware routes
-      // Middleware (USE) can have duplicate paths
-      if (method !== "USE" && usedPaths.has(fp)) {
+      // Middleware (USE) can have duplicate paths, and different HTTP methods can share paths
+      if (method !== "USE" && usedRoutes.has(routeKey)) {
         throw new Error(
-          `Duplicate route path "${fp}" detected in controller "${target.name}"`,
+          `Duplicate route [${method}] "${fp}" detected in controller "${target.name}"`,
         );
       }
       if (method !== "USE") {
-        usedPaths.add(fp);
+        usedRoutes.add(routeKey);
       }
 
       const methodName = methodResolve[method];
