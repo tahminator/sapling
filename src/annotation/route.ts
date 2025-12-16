@@ -11,12 +11,12 @@ export function _Route({
   path = "",
 }: {
   method: ExpressRouterMethodKey;
-  path: string | undefined;
+  path: string | RegExp | undefined;
 }): MethodDecorator {
   return (target, propertyKey) => {
     const ctor = (target as { constructor: Function }).constructor;
     const list = _routeStore.get(ctor) ?? [];
-    list.push({ method, path, fnName: String(propertyKey) });
+    list.push({ method, path: path ?? "", fnName: String(propertyKey) });
     _routeStore.set(ctor, list);
   };
 }
@@ -24,7 +24,7 @@ export function _Route({
 /**
  * Register GET route on the given path (default "") for the given controller.
  */
-export const GET = (path: string | undefined = "") =>
+export const GET = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "GET",
     path,
@@ -33,7 +33,7 @@ export const GET = (path: string | undefined = "") =>
 /**
  * Register POST route on the given path (default "") for the given controller.
  */
-export const POST = (path: string | undefined = "") =>
+export const POST = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "POST",
     path,
@@ -42,7 +42,7 @@ export const POST = (path: string | undefined = "") =>
 /**
  * Register PUT route on the given path (default "") for the given controller.
  */
-export const PUT = (path: string | undefined = "") =>
+export const PUT = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "PUT",
     path,
@@ -51,7 +51,7 @@ export const PUT = (path: string | undefined = "") =>
 /**
  * Register DELETE route on the given path (default "") for the given controller.
  */
-export const DELETE = (path: string | undefined = "") =>
+export const DELETE = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "DELETE",
     path,
@@ -60,7 +60,7 @@ export const DELETE = (path: string | undefined = "") =>
 /**
  * Register OPTIONS route on the given path (default "") for the given controller.
  */
-export const OPTIONS = (path: string | undefined = "") =>
+export const OPTIONS = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "OPTIONS",
     path,
@@ -69,7 +69,7 @@ export const OPTIONS = (path: string | undefined = "") =>
 /**
  * Register PATCH route on the given path (default "") for the given controller.
  */
-export const PATCH = (path: string | undefined = "") =>
+export const PATCH = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "PATCH",
     path,
@@ -78,7 +78,7 @@ export const PATCH = (path: string | undefined = "") =>
 /**
  * Register HEAD route on the given path (default "") for the given controller.
  */
-export const HEAD = (path: string | undefined = "") =>
+export const HEAD = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "HEAD",
     path,
@@ -87,7 +87,7 @@ export const HEAD = (path: string | undefined = "") =>
 /**
  * Register a middleware route on the given path (default "") for the given controller.
  */
-export const Middleware = (path: string | undefined = "") =>
+export const Middleware = (path: string | RegExp | undefined = "") =>
   _Route({
     method: "USE",
     path,

@@ -49,14 +49,16 @@ export function Controller(
       const fn = controllerInstance[fnName];
       if (typeof fn !== "function") continue;
 
-      const fp = prefix + path;
-      const routeKey = method + " " + fp;
+      // When path is a RegExp, use it directly without prefix
+      // When path is a string, prepend the prefix
+      const fp = path instanceof RegExp ? path : prefix + path;
+      const routeKey = method + " " + (path instanceof RegExp ? path.source : fp);
 
       // Only check for duplicates on non-middleware routes
       // Middleware (USE) can have duplicate paths, and different HTTP methods can share paths
       if (method !== "USE" && usedRoutes.has(routeKey)) {
         throw new Error(
-          `Duplicate route [${method}] "${fp}" detected in controller "${target.name}"`,
+          `Duplicate route [${method}] "${path instanceof RegExp ? path.source : fp}" detected in controller "${target.name}"`,
         );
       }
       if (method !== "USE") {
@@ -93,7 +95,7 @@ export function Controller(
         if (!response.writableEnded) {
           response
             .status(404)
-            .send(Html404ErrorPage(`Cannot ${methodName.toUpperCase()} ${fp}`));
+            .send(Html404ErrorPage(`Cannot ${methodName.toUpperCase()} ${path instanceof RegExp ? path.source : fp}`));
         }
       });
     }

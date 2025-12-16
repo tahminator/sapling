@@ -35,9 +35,9 @@ export type RouteDefinition = {
   method: ExpressRouterMethodKey;
 
   /**
-   * The path to define the route on.
+   * The path to define the route on. Can be a string or RegExp.
    */
-  path: string;
+  path: string | RegExp;
 
   /**
    * The name of the function the `@Route` annotation was applied on.
