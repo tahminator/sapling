@@ -277,4 +277,4 @@ This affects how `ResponseEntity` serializes response bodies and how request bod
 
 ## License
 
-ISC
+MIT
