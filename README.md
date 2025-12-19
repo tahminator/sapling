@@ -20,11 +20,12 @@ A lightweight library that brings some structure to Express.js
 
 ## Why?
 
-Express is great, but it can get really messy really quickly. Sapling lets you define controllers and routes using decorators instead of manually wiring everything up.
+1. Express is great, but it can get really messy really quickly. Sapling lets you define controllers and routes using decorators instead of manually wiring everything up.
 
-I took a lot of inspiration from Spring, but I don't believe that it would be correct to try to force Express.js or Typescript to adopt OOP entirely, which leads me to my next point:
+2. I took a lot of inspiration from Spring, but I don't believe that it would be correct to try to force Express.js or Typescript to adopt OOP entirely, which leads me to my next point:
+    - The best reason to use Sapling is that you can also eject out of the object oriented environment and run regular functional Express.js without having to do anything extra or hacky.
 
-- The best reason to use Sapling is that you can also eject out of the object oriented environment and run regular functional Express.js without having to do anything extra or hacky.
+3.I prefer Sapling to another library like Nest.js because Nest.js is too heavy of an abstraction. I only want what would be helpful to reduce issues during development, nothing more & (ideally) nothing else.
 
 ## Examples
 
