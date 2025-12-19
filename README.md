@@ -2,6 +2,22 @@
 
 A lightweight library that brings some structure to Express.js
 
+## Table of Contents
+
+- [Why?](#why)
+- [Examples](#examples)
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Features](#features)
+  - [Controllers](#controllers)
+  - [HTTP Methods](#http-methods)
+  - [Responses](#responses)
+  - [Error Handling](#error-handling)
+  - [Middleware](#middleware)
+  - [Redirects](#redirects)
+  - [Dependency Injection](#dependency-injection)
+  - [Custom Serialization](#custom-serialization)
+
 ## Why?
 
 Express is great, but it can get really messy really quickly. Sapling lets you define controllers and routes using decorators instead of manually wiring everything up.
@@ -245,6 +261,19 @@ class UserRepository {
   }
 }
 ```
+
+### Custom Serialization
+
+By default, Sapling uses `JSON.stringify` and `JSON.parse` for serialization. You can override these with custom serializers like [superjson](https://github.com/flightcontrolhq/superjson#readme) to automatically handle Dates, BigInts, and more:
+
+```typescript
+import superjson from "superjson";
+
+Sapling.setSerializeFn(superjson.stringify);
+Sapling.setDeserializeFn(superjson.parse);
+```
+
+This affects how `ResponseEntity` serializes response bodies and how request bodies are deserialized.
 
 ## License
 
