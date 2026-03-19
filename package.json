@@ -3,18 +3,25 @@
   "version": "1.5.0",
   "description": "A library to help you write cleaner Express.js code",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "pnpm run build",
     "build": "rm -rf dist && tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.12.4",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "/dist"
   ],
+  "keywords": [],
+  "author": "Tahmid Ahmed",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
   "dependencies": {
     "@types/express": "^5.0.6",
     "express": "^5.2.1"

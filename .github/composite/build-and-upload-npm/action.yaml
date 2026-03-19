@@ -1,0 +1,13 @@
+name: "Build and Upload to NPM registry"
+description: "Build and Upload to NPM registry"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build
+      shell: bash
+      run: pnpm run build
+
+    - name: Upload to NPM
+      shell: bash
+      run: bun run ./.github/scripts/src/upload-npm

@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
+name: CD
+run-name: Running continuous deployment on ${{ github.actor }}'s commits
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  buildAndDeploy:
+    name: Build @tahminator/sapling and deploy to NPM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pipeline
+        uses: ./.github/composite/setup
+        with:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install -r --frozen-lockfile
+
+      - name: Build and Upload to NPM registry
+        uses: ./.github/composite/build-and-upload-npm
