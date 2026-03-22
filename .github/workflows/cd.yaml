@@ -4,6 +4,7 @@ run-name: Running continuous deployment on ${{ github.actor }}'s commits
 
 permissions:
   contents: read
+  id-token: write
 
 on:
   push:
@@ -31,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24" # to be used for npm publish via OIDC
           cache: "pnpm"
 
       - name: Install Dependencies

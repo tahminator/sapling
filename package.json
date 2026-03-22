@@ -1,7 +1,11 @@
 {
   "name": "@tahminator/sapling",
-  "version": "1.5.0",
+  "version": "0.0.0",
+  "author": "Tahmid Ahmed",
   "description": "A library to help you write cleaner Express.js code",
+  "repository": {
+    "url": "git+https://github.com/tahminator/pipeline.git"
+  },
   "scripts": {
     "test": "pnpm run build",
     "build": "rm -rf dist && tsc"
@@ -20,7 +24,6 @@
     "/dist"
   ],
   "keywords": [],
-  "author": "Tahmid Ahmed",
   "license": "ISC",
   "packageManager": "pnpm@10.12.4",
   "dependencies": {
