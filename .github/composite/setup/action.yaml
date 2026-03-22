@@ -17,8 +17,12 @@ runs:
   using: "composite"
   steps:
     - name: Setup
-      uses: tahminator/pipeline/actions/setup@1.0.17
+      uses: tahminator/pipeline/actions/setup@1.0.18
       with:
         GPG_PASSPHRASE: ${{ inputs.GPG_PASSPHRASE }}
         GPG_PRIVATE_KEY: ${{ inputs.GPG_PRIVATE_KEY }}
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+
+    - name: Run tests
+      shell: bash
+      run: bun install --cwd .github/scripts --frozen-lockfile
