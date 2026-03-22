@@ -31,7 +31,7 @@ A lightweight library that brings some structure to Express.js
 
 Check the `/example` folder for a basic todo app with database integration.
 
-Sapling is also powering one of my more complex projects with 400+ users in production, which you can view at [instalock-web](https://github.com/tahminator/instalock-web).
+Sapling is also powering one of my more complex projects with 600+ users in production, which you can view at [instalock-web](https://github.com/tahminator/instalock-web).
 
 ## Install
 
@@ -188,7 +188,7 @@ import { Controller, Middleware } from "@tahminator/sapling";
 import cookieParser from "cookie-parser";
 import { NextFunction, Request, Response } from "express";
 
-@Controller()
+@MiddlewareClass() // works the same as @Controller, semantically different
 class CookieParserMiddleware {
   private readonly plugin: ReturnType<typeof cookieParser>;
 
