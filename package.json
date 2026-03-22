@@ -4,7 +4,7 @@
   "author": "Tahmid Ahmed",
   "description": "A library to help you write cleaner Express.js code",
   "repository": {
-    "url": "git+https://github.com/tahminator/pipeline.git"
+    "url": "git+https://github.com/tahminator/sapling.git"
   },
   "scripts": {
     "test": "pnpm run build",
