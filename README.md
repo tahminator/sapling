@@ -184,11 +184,11 @@ Sapling.loadResponseStatusErrorMiddleware(app, (err, req, res, next) => {
 Load Express middleware plugins using `@Middleware()`:
 
 ```typescript
-import { Controller, Middleware } from "@tahminator/sapling";
+import { MiddlewareClass, Middleware } from "@tahminator/sapling";
 import cookieParser from "cookie-parser";
 import { NextFunction, Request, Response } from "express";
 
-@MiddlewareClass() // works the same as @Controller, semantically different
+@MiddlewareClass() // @MiddlewareClass is an alias of @Controller, provides better semantics
 class CookieParserMiddleware {
   private readonly plugin: ReturnType<typeof cookieParser>;
 

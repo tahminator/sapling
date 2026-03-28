@@ -155,8 +155,6 @@ describe("Test Controller routes", () => {
       .set("Accept", "text/plain")
       .send(STR);
 
-    console.log(response);
-
     expect(response.statusCode).toBe(200);
 
     const resText = response.text as string;
