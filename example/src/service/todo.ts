@@ -1,6 +1,8 @@
-import { Todo } from "@/model/todo";
-import { TodoRepository } from "@/repository/todo";
 import { Injectable } from "@tahminator/sapling";
+
+import type { Todo } from "@/model/todo";
+
+import { TodoRepository } from "@/repository/todo";
 
 @Injectable([TodoRepository])
 export class TodoManager {

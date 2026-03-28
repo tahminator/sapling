@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface WeakMapEntry<K extends object, V> {
   value: V;
   ref: WeakRef<K>;
@@ -87,7 +88,10 @@ export class IterableWeakMap<K extends object, V> {
     }
   }
 
-  forEach(callback: (value: V, key: K, map: this) => void, thisArg?: any): void {
+  forEach(
+    callback: (value: V, key: K, map: this) => void,
+    thisArg?: any,
+  ): void {
     for (const [key, value] of this) {
       callback.call(thisArg, value, key, this);
     }

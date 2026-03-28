@@ -1,10 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Router } from "express";
-import { _InjectableDeps, _resolve } from "./injectable";
-import { Class, RouteDefinition, methodResolve } from "../types";
-import { _getRoutes } from "./route";
+
+import type { Class, RouteDefinition } from "../types";
+
+import { ResponseEntity, RedirectView } from "../helper";
 import { Sapling } from "../helper/sapling";
 import { Html404ErrorPage } from "../html/404";
-import { ResponseEntity, RedirectView } from "../helper";
+import { methodResolve } from "../types";
+import { _InjectableDeps, _resolve } from "./injectable";
+import { _getRoutes } from "./route";
 
 export const _ControllerRegistry = new WeakMap<Function, Router>();
 
@@ -52,7 +57,8 @@ export function Controller(
       // When path is a RegExp, use it directly without prefix
       // When path is a string, prepend the prefix
       const fp = path instanceof RegExp ? path : prefix + path;
-      const routeKey = method + " " + (path instanceof RegExp ? path.source : fp);
+      const routeKey =
+        method + " " + (path instanceof RegExp ? path.source : fp);
 
       // Only check for duplicates on non-middleware routes
       // Middleware (USE) can have duplicate paths, and different HTTP methods can share paths
@@ -95,7 +101,11 @@ export function Controller(
         if (!response.writableEnded) {
           response
             .status(404)
-            .send(Html404ErrorPage(`Cannot ${methodName.toUpperCase()} ${path instanceof RegExp ? path.source : fp}`));
+            .send(
+              Html404ErrorPage(
+                `Cannot ${methodName.toUpperCase()} ${path instanceof RegExp ? path.source : fp}`,
+              ),
+            );
         }
       });
     }

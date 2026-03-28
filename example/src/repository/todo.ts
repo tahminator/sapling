@@ -1,6 +1,9 @@
-import { Db, DbConn } from "@/common/db";
-import { Todo } from "@/model/todo";
 import { Injectable } from "@tahminator/sapling";
+
+import type { Db } from "@/common/db";
+import type { Todo } from "@/model/todo";
+
+import { DbConn } from "@/common/db";
 
 @Injectable([DbConn])
 export class TodoRepository {

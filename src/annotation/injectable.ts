@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Class } from "../types";
+
 import { IterableWeakMap } from "../../lib/weakmap";
-import { Class } from "../types";
 
 export const _InjectableRegistry = new WeakMap<Class<any>, any>();
 export const _InjectableDeps = new IterableWeakMap<
@@ -41,8 +43,10 @@ export function _resolve<T>(ctor: Class<T>): T {
     inDegree.set(node, inDegree.get(node) || 0);
     deps.forEach((dep) => {
       inDegree.set(dep, inDegree.get(dep) || 0);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       inDegree.set(node, inDegree.get(node)! + 1);
       if (!graph.has(dep)) graph.set(dep, []);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       graph.get(dep)!.push(node);
     });
   });
@@ -53,6 +57,7 @@ export function _resolve<T>(ctor: Class<T>): T {
   });
 
   while (queue.length) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const current = queue.shift()!;
     if (!_InjectableRegistry.get(current)) {
       const deps = _InjectableDeps.get(current) || [];

@@ -1,4 +1,6 @@
-import { HttpHeaders } from "../types";
+import type { HttpHeaders } from "../types";
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { HttpStatus } from "../enum";
 
 /**

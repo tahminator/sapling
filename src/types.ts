@@ -1,6 +1,6 @@
 // all exported types
 
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 export type ExpressRouterMethodKey =
   | "GET"
@@ -45,6 +45,7 @@ export type RouteDefinition = {
   fnName: string;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Class<T> = new (...args: any[]) => T;
 
 export type HttpHeaders = Record<string, string>;

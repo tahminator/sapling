@@ -1,4 +1,5 @@
-import { ResponseEntity } from "../helper";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { type ResponseEntity } from "../helper";
 
 /**
  * Enum of every valid HTTP status code mapped to a specific enum member.

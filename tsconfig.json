@@ -1,17 +1,7 @@
 {
-  "compilerOptions": {
-    "target": "ES2015",
-    "lib": ["ES2015", "ES2021.WeakRef"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "experimentalDecorators": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "declaration": true,
-    "outDir": "./dist"
-  },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "example"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
 }

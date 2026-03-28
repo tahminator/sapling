@@ -1,10 +1,14 @@
 import "dotenv/config";
-import express, { Express } from "express";
-import { Class, Sapling } from "@tahminator/sapling";
+import type { Class } from "@tahminator/sapling";
+import type { Express } from "express";
+
+import { Sapling } from "@tahminator/sapling";
+import express from "express";
 import path from "path";
+
+import { HelloWorldController } from "@/controller/hello";
 import { TodoController } from "@/controller/todo";
 import { ErrorMiddleware } from "@/middleware/error";
-import { HelloWorldController } from "@/controller/hello";
 
 export const CONSTANTS = {
   PORT: 3000,

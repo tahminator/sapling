@@ -1,6 +1,11 @@
-import e, { Router } from "express";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Router } from "express";
+
+import e from "express";
+
+import type { Class, ExpressMiddlewareFn } from "../types";
+
 import { _ControllerRegistry } from "../annotation/controller";
-import { Class, ExpressMiddlewareFn } from "../types";
 import { ResponseStatusError } from "./error";
 
 type Settings = {

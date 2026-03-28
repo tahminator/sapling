@@ -1,5 +1,5 @@
-import { ResponseStatusError } from "@tahminator/sapling";
-import { Request, Response, NextFunction } from "express";
+import type { ResponseStatusError } from "@tahminator/sapling";
+import type { Request, Response, NextFunction } from "express";
 
 export type ErrorResponse = {
   success: boolean;
@@ -28,9 +28,9 @@ export class ErrorMiddleware {
     console.error("[Error]", err);
 
     const status =
-      typeof err === "object" && err !== null && "status" in err
-        ? (err as any).status
-        : 500;
+      typeof err === "object" && err !== null && "status" in err ?
+        (err as any).status
+      : 500;
     const message =
       err instanceof Error ? err.message : "Internal Server Error";
 

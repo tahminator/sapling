@@ -1,4 +1,5 @@
-import { RouteDefinition, ExpressRouterMethodKey } from "../types";
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+import type { RouteDefinition, ExpressRouterMethodKey } from "../types";
 
 const _routeStore = new WeakMap<Function, RouteDefinition[]>();
 

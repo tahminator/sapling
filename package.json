@@ -7,7 +7,17 @@
     "url": "git+https://github.com/tahminator/sapling.git"
   },
   "scripts": {
-    "test": "pnpm run build",
+    "test": "pnpm run typecheck && pnpm run lint && pnpm run fmt && pnpm run vt && pnpm run build",
+    "vt": "vitest run",
+    "fmt": "pnpm run prettier",
+    "fmt:fix": "pnpm run prettier:fix",
+    "lint": "pnpm run eslint",
+    "lint:fix": "pnpm run eslint:fix",
+    "eslint": "eslint .",
+    "eslint:fix": "eslint . --fix",
+    "prettier": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --check .",
+    "prettier:fix": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --write .",
+    "typecheck": "tsc -b --noEmit",
     "build": "rm -rf dist && tsc"
   },
   "main": "./dist/index.js",
@@ -29,5 +39,20 @@
   "dependencies": {
     "@types/express": "^5.0.6",
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-istanbul": "^4.1.2",
+    "eslint": "^10.1.0",
+    "eslint-plugin-perfectionist": "^5.7.0",
+    "globals": "^17.4.0",
+    "jiti": "^2.6.1",
+    "jsdom": "^29.0.1",
+    "prettier": "^3.8.1",
+    "supertest": "^7.2.2",
+    "typescript-eslint": "^8.57.2",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.2"
   }
 }

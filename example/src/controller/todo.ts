@@ -1,5 +1,5 @@
-import { Todo } from "@/model/todo";
-import { TodoManager } from "@/service/todo";
+import type { Request } from "express";
+
 import {
   Controller,
   GET,
@@ -8,8 +8,11 @@ import {
   ResponseEntity,
   ResponseStatusError,
 } from "@tahminator/sapling";
-import { Request } from "express";
 import z from "zod";
+
+import type { Todo } from "@/model/todo";
+
+import { TodoManager } from "@/service/todo";
 
 export namespace TodoControllerResponses {
   export type CreateTodoResponse = {
