@@ -8,7 +8,7 @@ type Settings = {
   deserialize: (value: string) => any;
 };
 
-let settings: Settings = {
+const settings: Settings = {
   serialize: JSON.stringify,
   deserialize: JSON.parse,
 };
@@ -31,7 +31,7 @@ export class Sapling {
    * app.use(router);
    * ```
    */
-  static resolve<TClass>(clazz: Class<TClass>): Router {
+  static resolve<TClass>(this: void, clazz: Class<TClass>): Router {
     const router = _ControllerRegistry.get(clazz);
     if (!router) {
       throw new Error("Controller cannot be found");
@@ -51,7 +51,7 @@ export class Sapling {
    * app.use(Sapling.json());
    * ```
    */
-  static json(): ExpressMiddlewareFn {
+  static json(this: void): ExpressMiddlewareFn {
     return (request, _response, next) => {
       try {
         if (!request.body) {
@@ -90,7 +90,7 @@ export class Sapling {
    */
   static registerApp(app: e.Express): void {
     app.use(e.text({ type: "application/json" }));
-    app.use(this.json());
+    app.use(Sapling.json());
   }
 
   /**
@@ -116,6 +116,7 @@ export class Sapling {
    * ```
    */
   static loadResponseStatusErrorMiddleware(
+    this: void,
     app: e.Express,
     fn: (
       err: ResponseStatusError,
@@ -142,14 +143,14 @@ export class Sapling {
    *
    * @defaultValue `JSON.stringify`
    */
-  static serialize(value: any): string {
+  static serialize(this: void, value: any): string {
     return settings.serialize(value);
   }
 
   /**
    * Replace the function used for `serialize`.
    */
-  static setSerializeFn(fn: (value: any) => string): void {
+  static setSerializeFn(this: void, fn: (value: any) => string): void {
     settings.serialize = fn;
   }
 
@@ -162,14 +163,14 @@ export class Sapling {
    *
    * @defaultValue `JSON.parse`
    */
-  static deserialize<T = any>(value: string): T {
+  static deserialize<T = any>(this: void, value: string): T {
     return settings.deserialize(value);
   }
 
   /**
    * Replace the function used for `deserialize`
    */
-  static setDeserializeFn(fn: (value: string) => any): void {
+  static setDeserializeFn(this: void, fn: (value: string) => any): void {
     settings.deserialize = fn;
   }
 }
