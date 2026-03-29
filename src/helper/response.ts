@@ -7,7 +7,7 @@ import { HttpStatus } from "../enum";
  * Generic HTTP response wrapper modeled after Spring's `ResponseEntity`.
  *
  * Provides status code, headers, and an optional typed body.
- * The body is serialized through `Spring.serialize`.
+ * The body is serialized through `Sapling.serialize`.
  *
  * @typeParam T - the type of the response body
  */

@@ -82,6 +82,8 @@ class UserController {
 const app = express();
 Sapling.registerApp(app);
 
+// @Controller and @MiddlewareClass must be registered (in order).
+// @Injectable classes will automatically be formed into singletons by Sapling behind the scenes!
 const controllers: Class<any>[] = [HelloController, UserController];
 controllers.map(Sapling.resolve).forEach((r) => app.use(r));
 
