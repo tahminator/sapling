@@ -5,6 +5,8 @@ import superjson from "superjson";
 import request from "supertest";
 
 import { Controller, GET, POST, DELETE, PATCH } from "../annotation";
+import { HttpStatus } from "../enum";
+import { ResponseStatusError } from "../helper";
 import { ResponseEntity, Sapling } from "../helper";
 
 type Res = {
@@ -16,7 +18,7 @@ type Res = {
   d: Date;
 };
 
-describe("sapling logic", () => {
+describe("sapling serialize/deserialize logic", () => {
   let app: ReturnType<typeof e> | null = null;
 
   const testObj: Res = {
@@ -99,5 +101,69 @@ describe("sapling logic", () => {
     expect(body.json).toBeUndefined();
 
     expectBody(response.body as Res);
+  });
+});
+
+describe("sapling response status middleware logic", () => {
+  let app: ReturnType<typeof e> | null = null;
+
+  beforeEach(() => {
+    app = e();
+
+    Sapling.registerApp(app);
+    Sapling.setDeserializeFn(JSON.parse);
+    Sapling.setSerializeFn(JSON.stringify);
+  });
+
+  it("test response status middleware GET /", async () => {
+    @Controller()
+    class BaseController {
+      @GET()
+      public getAbc(): ResponseEntity<Res> {
+        throw new ResponseStatusError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "Something went wrong",
+        );
+      }
+    }
+
+    class ErrorMiddleware {
+      static responseStatusErrorMiddleware(
+        err: ResponseStatusError,
+        _req: e.Request,
+        res: e.Response,
+        _next: e.NextFunction,
+      ) {
+        res
+          .status(err.status)
+          .contentType("application/json")
+          .send(
+            Sapling.serialize({
+              success: false,
+              message: err.message,
+            }),
+          );
+      }
+    }
+
+    app?.use(Sapling.resolve(BaseController));
+    Sapling.loadResponseStatusErrorMiddleware(
+      app!,
+      ErrorMiddleware.responseStatusErrorMiddleware,
+    );
+
+    const response = await request(app!)
+      .get("/")
+      .set("Content-Type", "application/json")
+      .send();
+
+    expect(response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+
+    const body = response.body as {
+      success: false;
+      message: string;
+    };
+    expect(body.success).toBeFalsy();
+    expect(body.message).toBe("Something went wrong");
   });
 });
