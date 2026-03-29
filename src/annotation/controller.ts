@@ -33,12 +33,10 @@ type ControllerProps =
  * @param [prefix] Optional URL prefix applied to all routes in the controller. Defaults to "".
  * @param [deps] Optional array of dependencies to be injected into the constructor that are `@Injectable`
  */
-export function Controller(
-  { prefix = "", deps = [] }: ControllerProps = {
-    prefix: "",
-    deps: [],
-  },
-): ClassDecorator {
+export function Controller({
+  prefix = "",
+  deps = [],
+}: ControllerProps = {}): ClassDecorator {
   return (target: Function) => {
     const targetClass = target as Class<any>;
 

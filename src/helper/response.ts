@@ -12,9 +12,9 @@ import { HttpStatus } from "../enum";
  * @typeParam T - the type of the response body
  */
 export class ResponseEntity<T> {
-  private _statusCode: number;
-  private _headers: HttpHeaders = {};
-  private _body: T;
+  private readonly _statusCode: number;
+  private readonly _headers: HttpHeaders = {};
+  private readonly _body: T;
 
   constructor(body: T, headers: HttpHeaders = {}, statusCode: number = 200) {
     this._body = body;
@@ -75,7 +75,7 @@ export class ResponseEntity<T> {
  * ensuring type safety when constructing the response.
  */
 export class ResponseEntityBuilder {
-  private _statusCode: number;
+  private readonly _statusCode: number;
   private _headers: HttpHeaders = {};
 
   constructor(statusCode: number) {

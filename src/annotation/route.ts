@@ -3,6 +3,8 @@ import type { RouteDefinition, ExpressRouterMethodKey } from "../types";
 
 const _routeStore = new WeakMap<Function, RouteDefinition[]>();
 
+type OptionalStrOrRegExp = string | RegExp | undefined;
+
 /**
  * Custom annotation that will store all routes inside of a map,
  * which can then be used to initialize all the routes to the router.
@@ -12,7 +14,7 @@ export function _Route({
   path = "",
 }: {
   method: ExpressRouterMethodKey;
-  path: string | RegExp | undefined;
+  path: OptionalStrOrRegExp;
 }): MethodDecorator {
   return (target, propertyKey) => {
     const ctor = (target as { constructor: Function }).constructor;
@@ -25,7 +27,7 @@ export function _Route({
 /**
  * Register GET route on the given path (default "") for the given controller.
  */
-export const GET = (path: string | RegExp | undefined = "") =>
+export const GET = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "GET",
     path,
@@ -34,7 +36,7 @@ export const GET = (path: string | RegExp | undefined = "") =>
 /**
  * Register POST route on the given path (default "") for the given controller.
  */
-export const POST = (path: string | RegExp | undefined = "") =>
+export const POST = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "POST",
     path,
@@ -43,7 +45,7 @@ export const POST = (path: string | RegExp | undefined = "") =>
 /**
  * Register PUT route on the given path (default "") for the given controller.
  */
-export const PUT = (path: string | RegExp | undefined = "") =>
+export const PUT = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "PUT",
     path,
@@ -52,7 +54,7 @@ export const PUT = (path: string | RegExp | undefined = "") =>
 /**
  * Register DELETE route on the given path (default "") for the given controller.
  */
-export const DELETE = (path: string | RegExp | undefined = "") =>
+export const DELETE = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "DELETE",
     path,
@@ -61,7 +63,7 @@ export const DELETE = (path: string | RegExp | undefined = "") =>
 /**
  * Register OPTIONS route on the given path (default "") for the given controller.
  */
-export const OPTIONS = (path: string | RegExp | undefined = "") =>
+export const OPTIONS = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "OPTIONS",
     path,
@@ -70,7 +72,7 @@ export const OPTIONS = (path: string | RegExp | undefined = "") =>
 /**
  * Register PATCH route on the given path (default "") for the given controller.
  */
-export const PATCH = (path: string | RegExp | undefined = "") =>
+export const PATCH = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "PATCH",
     path,
@@ -79,7 +81,7 @@ export const PATCH = (path: string | RegExp | undefined = "") =>
 /**
  * Register HEAD route on the given path (default "") for the given controller.
  */
-export const HEAD = (path: string | RegExp | undefined = "") =>
+export const HEAD = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "HEAD",
     path,
@@ -88,7 +90,7 @@ export const HEAD = (path: string | RegExp | undefined = "") =>
 /**
  * Register a middleware route on the given path (default "") for the given controller.
  */
-export const Middleware = (path: string | RegExp | undefined = "") =>
+export const Middleware = (path: OptionalStrOrRegExp = "") =>
   _Route({
     method: "USE",
     path,
