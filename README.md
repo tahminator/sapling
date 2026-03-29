@@ -31,7 +31,7 @@ A lightweight library that brings some structure to Express.js
 
 Check the `/example` folder for a basic todo app with database integration.
 
-Sapling is also powering one of my more complex projects with 600+ users in production, which you can view at [instalock-web](https://github.com/tahminator/instalock-web).
+Sapling is also powering one of my more complex projects with 600+ users in production, which you can view at [instalock-web/apps/server](https://github.com/tahminator/instalock-web/blob/main/apps/server/src/index.ts).
 
 ## Install
 
