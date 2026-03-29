@@ -13,7 +13,7 @@ async function main() {
     scan: {
       additionalArgs: {
         "javascript.lcov.reportPaths": "coverage/lcov.info",
-        "coverage.exclusions": `${exclusions}`,
+        exclusions: `${exclusions}`,
       },
       organization: "tahminator",
       sourceCodeDir: "src/",
