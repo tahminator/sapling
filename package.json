@@ -18,7 +18,7 @@
     "prettier": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --check .",
     "prettier:fix": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --write .",
     "typecheck": "tsc -b --noEmit",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc --project tsconfig.app.json"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
