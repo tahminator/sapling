@@ -4,7 +4,7 @@ import e from "express";
 import superjson from "superjson";
 import request from "supertest";
 
-import { Controller, GET, POST, DELETE, PATCH } from "../annotation";
+import { Controller, GET, POST } from "../annotation";
 import { HttpStatus } from "../enum";
 import { ResponseStatusError } from "../helper";
 import { ResponseEntity, Sapling } from "../helper";
