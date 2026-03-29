@@ -1,5 +1,7 @@
 # Sapling
 
+[![BACKEND COVERAGE](https://img.shields.io/sonar/coverage/tahminator_sapling?server=https%3A%2F%2Fsonarcloud.io&style=flat&label=TEST%20COVERAGE)](https://sonarcloud.io/dashboard?id=tahminator_sapling)
+
 A lightweight library that brings some structure to Express.js
 
 ## Table of Contents
