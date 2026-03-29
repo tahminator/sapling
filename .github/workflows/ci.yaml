@@ -26,6 +26,9 @@ jobs:
 
       - name: Setup pipeline
         uses: ./.github/composite/setup
+        with:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -40,7 +43,7 @@ jobs:
         run: pnpm install -r --frozen-lockfile
 
       - name: Run Tests
-        run: pnpm run test
+        uses: ./.github/composite/run-tests
 
   createTag:
     name: Create new tag
