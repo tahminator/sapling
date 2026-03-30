@@ -22,9 +22,6 @@ jobs:
 
       - name: Setup Pipeline
         uses: ./.github/composite/setup
-        with:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

@@ -25,7 +25,7 @@ async function main() {
   });
 
   await sonarClient.runTests();
-  await sonarClient.uploadTests();
+  await sonarClient.uploadTestCoverage();
 }
 
 function parseCiEnv(ciEnv: Record<string, string>) {
