@@ -18,17 +18,17 @@ type Res = {
   d: Date;
 };
 
+const testObj: Res = {
+  x: 4,
+  a: "",
+  c: {
+    e: false,
+  },
+  d: new Date(),
+};
+
 describe("sapling serialize/deserialize logic", () => {
   let app: ReturnType<typeof e> | null = null;
-
-  const testObj: Res = {
-    x: 4,
-    a: "",
-    c: {
-      e: false,
-    },
-    d: new Date(),
-  };
 
   beforeEach(() => {
     app = e();
@@ -174,5 +174,81 @@ describe("sapling response status middleware logic", () => {
     } catch (e) {
       expect(e!.toString()).toContain("Error: Controller cannot be found");
     }
+  });
+});
+
+describe("Sapling.json", () => {
+  let app: ReturnType<typeof e> | null = null;
+
+  beforeEach(() => {
+    app = e();
+    app.use(e.text({ type: "application/json" }));
+  });
+
+  const registerApp = () => {
+    const json = vi.spyOn(Sapling, "json");
+    // calls Sapling.json under the hood
+    app!.use(Sapling.json());
+    return json;
+  };
+
+  it("content-type is not json", async () => {
+    const jsonSpy = registerApp();
+    const deserializeSpy = vi.spyOn(Sapling, "deserialize");
+
+    @Controller()
+    class BaseController {
+      @POST()
+      public post(request: e.Request): ResponseEntity<Res> {
+        return ResponseEntity.ok().body(request.body);
+      }
+    }
+
+    app!.use(Sapling.resolve(BaseController));
+
+    await request(app!)
+      .get("/")
+      .set("Content-Type", "application/xml")
+      .send("<hi></hi>");
+
+    expect(jsonSpy).toHaveBeenCalledTimes(1);
+    expect(deserializeSpy).not.toHaveBeenCalled();
+  });
+
+  it("request was serialized already", async () => {
+    // pre-stringify to avoid messing with mock
+    const BODY = JSON.stringify({ hi: 1 });
+
+    const jsonParseSpy = vi.spyOn(JSON, "parse");
+    const jsonStringifySpy = vi.spyOn(JSON, "stringify");
+
+    app!.use((req, _, next) => {
+      req.body = JSON.parse(req.body);
+      next();
+    });
+
+    const jsonSpy = registerApp();
+    const deserializeSpy = vi.spyOn(Sapling, "deserialize");
+
+    @Controller()
+    class BaseController {
+      @POST()
+      public post(request: e.Request): ResponseEntity<Res> {
+        return ResponseEntity.ok().body(request.body);
+      }
+    }
+
+    app!.use(Sapling.resolve(BaseController));
+
+    await request(app!)
+      .post("/")
+      .set("Content-Type", "application/json")
+      .send(BODY);
+
+    expect(jsonSpy).toHaveBeenCalledTimes(1);
+    expect(deserializeSpy).toHaveBeenCalledTimes(1);
+    expect(deserializeSpy).toHaveBeenCalledAfter(jsonParseSpy);
+    expect(deserializeSpy).toHaveBeenCalledAfter(jsonStringifySpy);
+    expect(jsonStringifySpy).toHaveBeenCalledTimes(1);
   });
 });
