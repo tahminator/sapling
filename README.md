@@ -3,39 +3,47 @@
 [![BACKEND COVERAGE](https://img.shields.io/sonar/coverage/tahminator_sapling?server=https%3A%2F%2Fsonarcloud.io&style=flat&label=TEST%20COVERAGE)](https://sonarcloud.io/dashboard?id=tahminator_sapling)
 [![NPM Version](https://img.shields.io/npm/v/%40tahminator%2Fsapling?label=NPM%20LATEST)](https://www.npmjs.com/package/@tahminator/sapling)
 
-
-A lightweight library that brings some structure to Express.js
+A lightweight Express.js dependency injection & route abstraction library.
 
 ## Table of Contents
+
+<!-- toc -->
 
 - [Why?](#why)
 - [Examples](#examples)
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Features](#features)
-  - [Controllers](#controllers)
-  - [HTTP Methods](#http-methods)
-  - [Responses](#responses)
-  - [Error Handling](#error-handling)
-  - [Middleware](#middleware)
-  - [Redirects](#redirects)
-  - [Dependency Injection](#dependency-injection)
-  - [Custom Serialization](#custom-serialization)
+  * [Controllers](#controllers)
+  * [HTTP Methods](#http-methods)
+  * [Responses](#responses)
+  * [Error Handling](#error-handling)
+  * [Middleware](#middleware)
+  * [Redirects](#redirects)
+  * [Dependency Injection](#dependency-injection)
+  * [Custom Serialization](#custom-serialization)
+- [Advanced Setup](#advanced-setup)
+  * [Automatically import controllers](#automatically-import-controllers)
+- [License](#license)
+
+<!-- tocstop -->
+
+<!-- if toc does not update automatically, `markdown-toc -i README.md` -->
 
 ## Why?
 
-1. Express is great, but it can get really messy really quickly. Sapling lets you define controllers and routes using decorators instead of manually wiring everything up.
+1. Express is a fantastic way to build server-side apps in JavaScript, but wiring can get messy very quickly. Sapling abstracts away complicated wiring of controllers & routes, allowing you to focus on business logic & write unit tests in a painless way.
 
-2. I took a lot of inspiration from Spring, but I don't believe that it would be correct to try to force Express.js or Typescript to adopt OOP entirely, which leads me to my next point:
-    - The best reason to use Sapling is that you can also eject out of the object oriented environment and run regular functional Express.js without having to do anything extra or hacky.
+2. Sapling is inspired by Spring, but without losing the developer experience, speed & simplicity of Express.js / TypeScript.
+    - The best reason to use Sapling is that you can opt-in or opt-out as much as you would like; run any traditional & functional Express.js without having to hack around the library.
 
-3. I prefer Sapling to other libraries like Nest.js because they are usually too heavy of an abstraction. I only want what would be helpful to improve development speed without getting in my way, nothing more & (ideally) nothing else.
+3. Sapling DI & routing is designed to be very light. This may be preferable to other libraries like Nest.js that provide a much heavier abstraction. Get what would be helpful to your improve development speed, ignore anything else that may get in your way.
 
 ## Examples
 
-Check the `/example` folder for a basic todo app with database integration.
+Check the [`/example`](./example) folder for a basic todo app with database integration.
 
-Sapling is also powering one of my more complex projects with 600+ users in production, which you can view at [instalock-web/apps/server](https://github.com/tahminator/instalock-web/blob/main/apps/server/src/index.ts).
+Sapling is also powering one of my more complex projects with 660+ users in production, which you can view at [instalock-web/apps/server](https://github.com/tahminator/instalock-web/blob/main/apps/server/src/index.ts).
 
 ## Install
 
@@ -281,6 +289,84 @@ Sapling.setDeserializeFn(superjson.parse);
 ```
 
 This affects how `ResponseEntity` serializes response bodies and how request bodies are deserialized.
+
+## Advanced Setup
+
+### Automatically import controllers
+
+> [!NOTE]
+> You need ESLint (or some alternative build step that has glob-import support)
+
+Controllers can be automatically imported via a glob-import if you ensure that all controller files are:
+
+- `export default` (so one controller per file)
+- all controller files are marked as `*.controller.ts`
+
+. The steps below indicate a working example inside of my webapp, [instalock-web/apps/server](https://github.com/tahminator/instalock-web/blob/main/apps/server/src/index.ts).
+
+1. Create a bootstrap file that will glob-import all controller files and export them
+
+[example file](https://github.com/tahminator/instalock-web/blob/main/apps/server/src/bootstrap.ts)
+
+```ts
+// file will automatically import any controller files
+// it will pull out default exports, so ensure
+// 1. one class per file
+// 2. `export default XyzController`
+
+// q: wont this break ordering of controller imports?
+// a: yes but that's ok - controllers are the last in the dependency graph.
+// they import, but are never imported themselves.
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+
+import { modules } from "./controller/**/{controller,*.controller}.ts#default";
+
+export const getControllers = (): Class<unknown>[] => {
+  return modules.map((mod) => mod.default as Class<unknown>);
+};
+```
+
+1. Point `Sapling.resolve` to `getControllers`
+
+[example file](https://github.com/tahminator/instalock-web/blob/main/apps/server/src/index.ts#L45-L47)
+
+```ts
+const controllers = getControllers();
+console.log(`${controllers.length} controllers resolved`);
+controllers.map(Sapling.resolve).forEach((r) => app.use(r));
+```
+
+1. Configure your ESBuild process to use the `esbuild-plugin-import-pattern` plugin
+
+[example file](https://github.com/tahminator/instalock-web/blob/main/apps/server/build.ts)
+
+```ts
+import * as esbuild from "esbuild";
+// @ts-expect-error no types
+import { importPatternPlugin } from "esbuild-plugin-import-pattern";
+
+async function main() {
+  const ctx = await esbuild.context({
+    entryPoints: ["src/index.ts"],
+    bundle: true,
+    sourcemap: true,
+    platform: "node",
+    outfile: "src/index.js",
+    logLevel: "info",
+    format: "cjs",
+    plugins: [importPatternPlugin()],
+  });
+
+  await ctx.rebuild();
+  await ctx.dispose();
+}
+
+void main();
+```
 
 ## License
 
