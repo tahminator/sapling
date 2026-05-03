@@ -273,7 +273,6 @@ describe("injectable logic", () => {
       const controllers = [MagicNumberController] as Class<unknown>[];
       controllers.map(Sapling.resolve).map((r) => app!.use(r));
     } catch (e) {
-      console.error(e);
       expect(
         e!
           .toString()
