@@ -5,7 +5,7 @@ import request from "supertest";
 
 import { RedirectView, ResponseEntity, Sapling } from "../helper";
 import { Controller } from "./controller";
-import { GET, POST, DELETE, PATCH } from "./route";
+import { GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS, _Route } from "./route";
 
 type Res = {
   x: number;
@@ -126,6 +126,60 @@ describe("controller logic", () => {
     app?.use(Sapling.resolve(ABCController));
 
     const response = await request(app!).patch("/abc");
+
+    expect(response.statusCode).toBe(200);
+
+    const body = response.body as Res;
+    expectBody(body);
+  });
+
+  it("test PUT /abc", async () => {
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @PUT()
+      public getAbc(): ResponseEntity<Res> {
+        return ResponseEntity.ok().body(testObj);
+      }
+    }
+
+    app?.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).put("/abc");
+
+    expect(response.statusCode).toBe(200);
+
+    const body = response.body as Res;
+    expectBody(body);
+  });
+
+  it("test HEAD /abc", async () => {
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @HEAD()
+      public getAbc(): ResponseEntity<undefined> {
+        return ResponseEntity.ok().body(undefined);
+      }
+    }
+
+    app?.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).head("/abc");
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("test OPTIONS /abc", async () => {
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @OPTIONS()
+      public getAbc(): ResponseEntity<Res> {
+        return ResponseEntity.ok().body(testObj);
+      }
+    }
+
+    app?.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).options("/abc");
 
     expect(response.statusCode).toBe(200);
 
