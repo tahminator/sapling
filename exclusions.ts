@@ -5,4 +5,4 @@
 
 const baseDir = "src";
 
-export const exclusions = [`${baseDir}/**/*.test.ts`];
+export const exclusions = [`${baseDir}/**/*.test.ts`, `${baseDir}/__test__/**`];
