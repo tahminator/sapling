@@ -36,11 +36,11 @@
   "keywords": [],
   "license": "ISC",
   "packageManager": "pnpm@10.12.4",
-  "dependencies": {
-    "@types/express": "^5.0.6",
-    "express": "^5.2.1"
+  "peerDependencies": {
+    "express": "^5"
   },
   "devDependencies": {
+    "@types/express": "^5",
     "@eslint/js": "^10.0.1",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-istanbul": "^4.1.2",
