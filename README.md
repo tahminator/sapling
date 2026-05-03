@@ -56,14 +56,20 @@ pnpm install @tahminator/sapling
 
 ```typescript
 import express from "express";
-import {
-  Sapling,
-  Controller,
-  GET,
-  POST,
-  ResponseEntity,
-  Class,
-} from "@tahminator/sapling";
+import { Sapling, Controller, GET, POST, ResponseEntity, Class, HttpStatus, MiddlewareClass, Middleware } from "@tahminator/sapling";
+
+@MiddlewareClass()
+class LoggingMiddleware {
+  @Middleware()
+  loggingMiddleware(
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction,
+  ): void {
+    console.log(request.path);
+    next();
+  }
+}
 
 @Controller({ prefix: "/api" })
 class HelloController {
@@ -90,7 +96,12 @@ class UserController {
 const app = express();
 Sapling.registerApp(app);
 
-// @Controller and @MiddlewareClass must be registered (in order).
+// @MiddlewareClass should be registered first before @Controller and should be registered in order
+// @Injectable classes will automatically be formed into singletons by Sapling behind the scenes!
+const middlewares: Class<any>[] = [LoggingMiddleware];
+middlewares.map(Sapling.resolve).forEach((r) => app.use(r));
+
+// @Controller can be registered in any order.
 // @Injectable classes will automatically be formed into singletons by Sapling behind the scenes!
 const controllers: Class<any>[] = [HelloController, UserController];
 controllers.map(Sapling.resolve).forEach((r) => app.use(r));
