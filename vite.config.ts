@@ -14,5 +14,6 @@ export default defineConfig({
       provider: "istanbul",
       reporter: ["lcov"],
     },
+    clearMocks: true,
   },
 });
