@@ -244,4 +244,44 @@ describe("injectable logic", () => {
     expect(body1).toBe(1);
     expect(body2).toBe(2);
   });
+
+  it("circular service dependencies", async () => {
+    const { PrimaryMagicNumberService } = await import("../__test__/first");
+    try {
+      @Controller({
+        deps: [PrimaryMagicNumberService],
+        prefix: "/magic",
+      })
+      class MagicNumberController {
+        constructor(
+          private readonly magicNumberService: InstanceType<
+            typeof PrimaryMagicNumberService
+          >,
+        ) {}
+
+        @GET("/1")
+        public getPrimaryN(): ResponseEntity<number> {
+          return ResponseEntity.ok().body(this.magicNumberService.getN());
+        }
+
+        @GET("/2")
+        public getSecondaryN(): ResponseEntity<number> {
+          return ResponseEntity.ok().body(this.magicNumberService.getN());
+        }
+      }
+
+      const controllers = [MagicNumberController] as Class<unknown>[];
+      controllers.map(Sapling.resolve).map((r) => app!.use(r));
+    } catch (e) {
+      console.error(e);
+      expect(
+        e!
+          .toString()
+          .includes("This is likely caused by a circular dependency."),
+      ).toBeTruthy();
+      return;
+    }
+
+    expect.fail("expected circular dependency");
+  });
 });
