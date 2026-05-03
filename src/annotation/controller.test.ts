@@ -3,7 +3,7 @@
 import e from "express";
 import request from "supertest";
 
-import { ResponseEntity, Sapling } from "../helper";
+import { RedirectView, ResponseEntity, Sapling } from "../helper";
 import { Controller } from "./controller";
 import { GET, POST, DELETE, PATCH } from "./route";
 
@@ -180,5 +180,67 @@ describe("controller logic", () => {
 
     const resText = response.text as string;
     expect(resText).toBe(STR);
+  });
+
+  it("test duplicate non-middleware route /abc text body", async () => {
+    try {
+      @Controller({ prefix: "/abc" })
+      class ABCController {
+        @POST()
+        public getAbc(request: e.Request, response: e.Response): void {
+          response.setHeader("Content-Type", "text/plain");
+          response.send(request.body);
+        }
+
+        @POST()
+        public getAbc2(request: e.Request, response: e.Response): void {
+          response.setHeader("Content-Type", "text/plain");
+          response.send(request.body);
+        }
+      }
+
+      app!.use(e.text());
+      app!.use(Sapling.resolve(ABCController));
+    } catch (e) {
+      expect(e!.toString()).toEqual(
+        'Error: Duplicate route [POST] "/abc" detected in controller "ABCController"',
+      );
+    }
+  });
+
+  it("test RedirectView /abc", async () => {
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @GET()
+      public goToDEF(): RedirectView {
+        return RedirectView.redirect("/def");
+      }
+    }
+
+    app!.use(e.text());
+    app!.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).get("/abc");
+
+    expect(response.redirect).toBe(true);
+    expect(response.header.location).toBe("/def");
+  });
+
+  it("test route not found", async () => {
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @GET()
+      public goToDEF(): RedirectView {
+        return RedirectView.redirect("/def");
+      }
+    }
+
+    app!.use(e.text());
+    app!.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).get("/");
+
+    expect(response.statusCode).toBe(404);
+    expect(response.text).toContain("Cannot GET /");
   });
 });

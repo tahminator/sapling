@@ -42,6 +42,11 @@ export function _resolve<T>(ctor: Class<T>): T {
   _InjectableDeps.forEach((deps, node) => {
     inDegree.set(node, inDegree.get(node) || 0);
     deps.forEach((dep) => {
+      if (dep === undefined) {
+        throw new Error(
+          `There is an @Injectable (${node.name}) which has a dependency that cannot be found. This is likely caused by a circular dependency.`,
+        );
+      }
       inDegree.set(dep, inDegree.get(dep) || 0);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       inDegree.set(node, inDegree.get(node)! + 1);

@@ -166,4 +166,13 @@ describe("sapling response status middleware logic", () => {
     expect(body.success).toBeFalsy();
     expect(body.message).toBe("Something went wrong");
   });
+
+  it("resolve controller not registered", () => {
+    try {
+      class E {}
+      Sapling.resolve(E);
+    } catch (e) {
+      expect(e!.toString()).toContain("Error: Controller cannot be found");
+    }
+  });
 });
