@@ -4,6 +4,7 @@ import e from "express";
 import request from "supertest";
 
 import { RedirectView, ResponseEntity, Sapling } from "../helper";
+import { Html404ErrorPage } from "../html";
 import { Controller } from "./controller";
 import { GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS, _Route } from "./route";
 
@@ -295,6 +296,24 @@ describe("controller logic", () => {
     const response = await request(app!).get("/");
 
     expect(response.statusCode).toBe(404);
-    expect(response.text).toContain("Cannot GET /");
+    expect(response.text).toBe(Html404ErrorPage("Cannot GET /"));
+  });
+
+  it("test GET /abc, weird return", async () => {
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @GET()
+      public goToDEF(): Res {
+        return testObj;
+      }
+    }
+
+    app!.use(e.text());
+    app!.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).get("/abc");
+
+    expect(response.statusCode).toBe(404);
+    expect(response.text).toBe(Html404ErrorPage("Cannot GET /abc"));
   });
 });
