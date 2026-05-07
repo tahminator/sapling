@@ -1,8 +1,16 @@
-import { GitHubClient, Utils } from "@tahminator/pipeline";
+import {
+  EnvClient,
+  EnvClientStrategy,
+  GitHubClient,
+  Utils,
+  VersioningClient,
+  VersioningStrategy,
+} from "@tahminator/pipeline";
 
 export async function main() {
+  const envClient = EnvClient.create(EnvClientStrategy.GIT_CRYPT);
   const { githubAppAppId, githubAppInstallationId, githubAppPrivateKeyB64 } =
-    parseCiEnv(await Utils.getEnvVariables(["ci"]));
+    parseCiEnv(await envClient.readFromEnv(".env.ci"));
 
   const ghClient = await GitHubClient.createWithGithubAppToken({
     appId: githubAppAppId,
@@ -10,9 +18,11 @@ export async function main() {
     privateKey: await Utils.decodeBase64EncodedString(githubAppPrivateKeyB64),
   });
 
+  const versioningClient = new VersioningClient(VersioningStrategy.JSTS);
+
   await ghClient.createTag({
     onPreTagCreate: async (tag) => {
-      await Utils.updateAllPackageJsonsWithVersion(tag);
+      await versioningClient.update(tag);
     },
   });
 }
