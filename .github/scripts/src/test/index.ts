@@ -1,10 +1,15 @@
-import { SonarScannerClient, Utils } from "@tahminator/pipeline";
+import {
+  EnvClient,
+  EnvClientStrategy,
+  SonarScannerClient,
+} from "@tahminator/pipeline";
 import { $ } from "bun";
 
 import { exclusions } from "../../../../exclusions";
 
 async function main() {
-  const { sonarToken } = parseCiEnv(await Utils.getEnvVariables(["ci"]));
+  const envClient = EnvClient.create(EnvClientStrategy.GIT_CRYPT);
+  const { sonarToken } = parseCiEnv(await envClient.readFromEnv(".env.ci"));
 
   const sonarClient = new SonarScannerClient({
     auth: {

@@ -1,14 +1,30 @@
 import {
-  EnvClient,
-  EnvClientStrategy,
   GitHubClient,
   Utils,
+  NPMClient,
+  EnvClient,
+  EnvClientStrategy,
   VersioningClient,
   VersioningStrategy,
 } from "@tahminator/pipeline";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 
-export async function main() {
+const { sha, prId } = await yargs(hideBin(process.argv))
+  .option("sha", {
+    type: "string",
+    demandOption: true,
+  })
+  .option("prId", {
+    type: "number",
+    demandOption: true,
+  })
+  .strict()
+  .parse();
+
+async function main() {
   const envClient = EnvClient.create(EnvClientStrategy.GIT_CRYPT);
+
   const { githubAppAppId, githubAppInstallationId, githubAppPrivateKeyB64 } =
     parseCiEnv(await envClient.readFromEnv(".env.ci"));
 
@@ -17,14 +33,41 @@ export async function main() {
     installationId: githubAppInstallationId,
     privateKey: await Utils.decodeBase64EncodedString(githubAppPrivateKeyB64),
   });
-
+  const npmClient = await NPMClient.create();
   const versioningClient = new VersioningClient(VersioningStrategy.JSTS);
 
-  await ghClient.createTag({
-    onPreTagCreate: async (tag) => {
-      await versioningClient.update(tag);
-    },
+  const shortSha = await getShortSha(sha);
+  const lastTag = (await ghClient.getLatestTag()) ?? GitHubClient.BASE_VERSION;
+  const betaVersion = `${lastTag}-beta.${shortSha}`;
+
+  if (!Utils.SemVer.validate(betaVersion)) {
+    throw new Error(`Generated invalid beta version: ${betaVersion}`);
+  }
+
+  await versioningClient.update(betaVersion);
+  await npmClient.publish(false, true);
+
+  console.log(`Uploaded ${betaVersion} to NPM.`);
+  await ghClient.sendPrMessage({
+    prId,
+    owner: "tahminator",
+    repository: "sapling",
+    message: `
+## Test Version Uploaded
+
+Uploaded \`${betaVersion}\` to NPM. View version on NPM registry [here](https://www.npmjs.com/package/@tahminator/sapling/v/${betaVersion}).
+`,
   });
+}
+
+async function getShortSha(sha: string) {
+  const shortSha = sha.slice(0, 8).toString().trim();
+
+  if (shortSha.length !== 8) {
+    throw new Error("Could not parse git SHA");
+  }
+
+  return shortSha;
 }
 
 function parseCiEnv(ciEnv: Record<string, string>) {
