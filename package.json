@@ -18,17 +18,17 @@
     "prettier": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --check .",
     "prettier:fix": "NODE_OPTIONS=\"--experimental-strip-types\" prettier --write .",
     "typecheck": "tsc -b --noEmit",
-    "build": "rm -rf dist && tsc --project tsconfig.app.json"
+    "build": "rm -rf dist && tsdown"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "/dist"
@@ -40,8 +40,8 @@
     "express": "^5"
   },
   "devDependencies": {
-    "@types/express": "^5",
     "@eslint/js": "^10.0.1",
+    "@types/express": "^5",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-istanbul": "^4.1.2",
     "eslint": "^10.1.0",
@@ -52,6 +52,7 @@
     "prettier": "^3.8.1",
     "superjson": "^2.2.6",
     "supertest": "^7.2.2",
+    "tsdown": "^0.21.10",
     "typescript-eslint": "^8.57.2",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.2"
