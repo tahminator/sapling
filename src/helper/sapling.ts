@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Router } from "express";
+import type { ErrorRequestHandler, Router } from "express";
 
 import e from "express";
 
 import type { Class, ExpressMiddlewareFn } from "../types";
 
 import { _ControllerRegistry } from "../annotation/controller";
-import { ResponseStatusError } from "./error";
 
 type Settings = {
   serialize: (value: any) => string;
@@ -36,7 +35,10 @@ export class Sapling {
    * app.use(router);
    * ```
    */
-  static resolve<TClass>(this: void, clazz: Class<TClass>): Router {
+  static resolve<TClass>(
+    this: void,
+    clazz: Class<TClass>,
+  ): Router | ErrorRequestHandler {
     const router = _ControllerRegistry.get(clazz);
     if (!router) {
       throw new Error("Controller cannot be found");
@@ -96,47 +98,6 @@ export class Sapling {
   static registerApp(app: e.Express): void {
     app.use(e.text({ type: "application/json" }));
     app.use(Sapling.json());
-  }
-
-  /**
-   * Register a middleware that will handle {@link ResponseStatusError}.
-   *
-   * This middleware will chain to the next middleware if it does not catch {@link ResponseStatusError}.
-   * You may still define middleware to handle all other errors in a separate `app.use` call.
-   *
-   * @example
-   * ```ts
-   * import express from "express";
-   * import { Sapling } from "@tahminator/sapling";
-   *
-   * const app = express();
-   *
-   * Sapling.loadResponseStatusErrorMiddleware(app, (err, req, res, next) => {
-   *   // `err` is guaranteed to be of type ResponseStatusError
-   *   res.status(err.status).json({
-   *     success: false,
-   *     message: err.message,
-   *   });
-   * });
-   * ```
-   */
-  static loadResponseStatusErrorMiddleware(
-    this: void,
-    app: e.Express,
-    fn: (
-      err: ResponseStatusError,
-      request: e.Request,
-      response: e.Response,
-      next: e.NextFunction,
-    ) => void,
-  ): void {
-    app.use(((err, req, res, next) => {
-      if (err instanceof ResponseStatusError) {
-        fn(err, req, res, next);
-      } else {
-        next(err);
-      }
-    }) as e.ErrorRequestHandler);
   }
 
   /**

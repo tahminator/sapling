@@ -8,6 +8,7 @@ import { Controller, GET, POST } from "../annotation";
 import { HttpStatus } from "../enum";
 import { ResponseStatusError } from "../helper";
 import { ResponseEntity, Sapling } from "../helper";
+import { DefaultResponseStatusErrorMiddleware } from "../middleware/default/responsestatus";
 
 type Res = {
   x: number;
@@ -115,7 +116,7 @@ describe("sapling response status middleware logic", () => {
     Sapling.setSerializeFn(JSON.stringify);
   });
 
-  it("test response status middleware GET /", async () => {
+  it("test default response status middleware GET /", async () => {
     @Controller()
     class BaseController {
       @GET()
@@ -127,30 +128,8 @@ describe("sapling response status middleware logic", () => {
       }
     }
 
-    class ErrorMiddleware {
-      static responseStatusErrorMiddleware(
-        err: ResponseStatusError,
-        _req: e.Request,
-        res: e.Response,
-        _next: e.NextFunction,
-      ) {
-        res
-          .status(err.status)
-          .contentType("application/json")
-          .send(
-            Sapling.serialize({
-              success: false,
-              message: err.message,
-            }),
-          );
-      }
-    }
-
-    app?.use(Sapling.resolve(BaseController));
-    Sapling.loadResponseStatusErrorMiddleware(
-      app!,
-      ErrorMiddleware.responseStatusErrorMiddleware,
-    );
+    app!.use(Sapling.resolve(BaseController));
+    app!.use(Sapling.resolve(DefaultResponseStatusErrorMiddleware));
 
     const response = await request(app!)
       .get("/")
@@ -160,10 +139,8 @@ describe("sapling response status middleware logic", () => {
     expect(response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
 
     const body = response.body as {
-      success: false;
       message: string;
     };
-    expect(body.success).toBeFalsy();
     expect(body.message).toBe("Something went wrong");
   });
 

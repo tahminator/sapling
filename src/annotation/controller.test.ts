@@ -2,10 +2,12 @@
 
 import e from "express";
 import request from "supertest";
+import { z } from "zod";
 
 import { RedirectView, ResponseEntity, Sapling } from "../helper";
 import { Html404ErrorPage } from "../html";
 import { Controller } from "./controller";
+import { RequestBody } from "./request";
 import { GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS, _Route } from "./route";
 
 type Res = {
@@ -315,5 +317,91 @@ describe("controller logic", () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.text).toBe(Html404ErrorPage("Cannot GET /abc"));
+  });
+});
+
+describe("controller request schema parsing", () => {
+  let app: ReturnType<typeof e> | null = null;
+
+  beforeEach(() => {
+    app = e();
+    Sapling.registerApp(app);
+  });
+
+  it("parses @RequestBody and returns 200", async () => {
+    const schema = z.object({ name: z.string(), age: z.number() });
+
+    @Controller({ prefix: "/users" })
+    class UserController {
+      @RequestBody(schema)
+      @POST()
+      public create(request: e.Request): ResponseEntity<unknown> {
+        return ResponseEntity.ok().body(request.body);
+      }
+    }
+
+    app!.use(Sapling.resolve(UserController));
+
+    const response = await request(app!)
+      .post("/users")
+      .set("Content-Type", "application/json")
+      .send({ name: "Alice", age: 30 });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({ name: "Alice", age: 30 });
+  });
+
+  it("parses @RequestParam and returns 200", async () => {
+    @Controller({ prefix: "/users" })
+    class UserController {
+      @GET("/:id")
+      public get(request: e.Request): ResponseEntity<unknown> {
+        return ResponseEntity.ok().body(request.params);
+      }
+    }
+
+    app!.use(Sapling.resolve(UserController));
+
+    const response = await request(app!).get("/users/42");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({ id: "42" });
+  });
+
+  it("parses @RequestQuery and returns 200", async () => {
+    @Controller({ prefix: "/users" })
+    class UserController {
+      @GET()
+      public list(request: e.Request): ResponseEntity<unknown> {
+        return ResponseEntity.ok().body(request.query);
+      }
+    }
+
+    app!.use(Sapling.resolve(UserController));
+
+    const response = await request(app!).get("/users?page=1&limit=10");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({ page: "1", limit: "10" });
+  });
+
+  it("returns 400 on invalid @RequestBody", async () => {
+    @Controller({ prefix: "/users" })
+    class UserController {
+      @RequestBody(z.object({ name: z.string() }))
+      @POST()
+      public create(request: e.Request): ResponseEntity<unknown> {
+        return ResponseEntity.ok().body(request.body);
+      }
+    }
+
+    app!.use(Sapling.resolve(UserController));
+
+    const response = await request(app!)
+      .post("/users")
+      .set("Content-Type", "application/json")
+      .send({ name: 123 });
+
+    expect(response.statusCode).toBe(400);
   });
 });
