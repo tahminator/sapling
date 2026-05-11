@@ -23,8 +23,6 @@ export class DefaultBaseErrorMiddleware {
       message: "Internal Server Error",
     });
 
-    // next() is called implicitly, you should avoid doing it yourself.
-    // early return in middleware should just be done with `return;`
-    // Sapling will call the next error-handling middleware in the chain for you.
+    // no next(), should be last in chain
   }
 }

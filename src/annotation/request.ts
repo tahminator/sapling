@@ -92,6 +92,7 @@ export async function _parseOrThrow<TSchema extends StandardSchemaV1>(
   const result = await schema["~standard"].validate(input);
 
   if (result.issues) {
+    console.debug(`Failed to parse a schema`);
     throw new ParserError(kind, result.issues, schema["~standard"].vendor);
   }
 
