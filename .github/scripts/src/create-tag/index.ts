@@ -4,7 +4,7 @@ import {
   GitHubClient,
   Utils,
   VersioningClient,
-  VersioningStrategy,
+  VersionUpdatingStrategy,
 } from "@tahminator/pipeline";
 
 export async function main() {
@@ -18,9 +18,16 @@ export async function main() {
     privateKey: await Utils.decodeBase64EncodedString(githubAppPrivateKeyB64),
   });
 
-  const versioningClient = new VersioningClient(VersioningStrategy.JSTS);
+  const versioningClient = new VersioningClient(
+    ghClient,
+    VersionUpdatingStrategy.JSTS,
+  );
+
+  const rootPkgJson: { version: string } =
+    await Bun.file("./package.json").json();
 
   await ghClient.createTag({
+    nextTag: await versioningClient.next(rootPkgJson.version),
     onPreTagCreate: async (tag) => {
       await versioningClient.update(tag);
     },

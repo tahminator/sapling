@@ -5,7 +5,7 @@ import {
   EnvClient,
   EnvClientStrategy,
   VersioningClient,
-  VersioningStrategy,
+  VersionUpdatingStrategy,
 } from "@tahminator/pipeline";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -34,15 +34,13 @@ async function main() {
     privateKey: await Utils.decodeBase64EncodedString(githubAppPrivateKeyB64),
   });
   const npmClient = await NPMClient.create();
-  const versioningClient = new VersioningClient(VersioningStrategy.JSTS);
+  const versioningClient = new VersioningClient(
+    ghClient,
+    VersionUpdatingStrategy.JSTS,
+  );
 
   const shortSha = await getShortSha(sha);
-  const lastTag = (await ghClient.getLatestTag()) ?? GitHubClient.BASE_VERSION;
-  const betaVersion = `${lastTag}-beta.${shortSha}`;
-
-  if (!Utils.SemVer.validate(betaVersion)) {
-    throw new Error(`Generated invalid beta version: ${betaVersion}`);
-  }
+  const betaVersion = await versioningClient.nextBeta(shortSha);
 
   await versioningClient.update(betaVersion);
   await npmClient.publish(false, true);
