@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { ParserError } from "../exception";
+import { ParserError } from "../helper";
 import {
   RequestBody,
   RequestParam,

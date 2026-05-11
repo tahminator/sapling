@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
-import { ParserError, type ParserErrorLocation } from "../exception";
+import { ParserError, type ParserErrorLocation } from "../helper";
 
 type RequestSchemaDefinition = {
   body?: StandardSchemaV1;
