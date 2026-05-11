@@ -19,6 +19,7 @@ A lightweight Express.js dependency injection & route abstraction library.
   * [Responses](#responses)
   * [Error Handling](#error-handling)
   * [Middleware](#middleware)
+  * [Request Validation](#request-validation)
   * [Redirects](#redirects)
   * [Dependency Injection](#dependency-injection)
   * [Custom Serialization](#custom-serialization)
@@ -142,8 +143,11 @@ Sapling supports the usual suspects:
 - `@DELETE(path?)`
 - `@PATCH(path?)`
 - `@Middleware(path?)` - for middleware
+- `@RequestBody(schema)` - validate & parse the request body
+- `@RequestParam(schema)` - validate & parse route params
+- `@RequestQuery(schema)` - validate & parse the query string
 
-Path defaults to `"/"` if you don't pass one.
+Path defaults to `"/"` if you don't pass one. The request schema decorators accept any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator (e.g. Zod, Valibot, ArkType).
 
 ### Responses
 
@@ -232,6 +236,56 @@ app.use(Sapling.resolve(CookieParserMiddleware));
 
 // You can also still choose to load plugins the Express.js way
 app.use(cookieParser());
+```
+
+### Request Validation
+
+Validate and transform request bodies, route params, and query strings at the controller level using `@RequestBody`, `@RequestParam`, and `@RequestQuery`. These decorators accept any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator (Zod, Valibot, ArkType, etc.).
+
+If validation fails, a `ParserError` is thrown, which Express handles as a `400 Bad Request` by default:
+
+```typescript
+import { z } from "zod";
+
+const CreateUserSchema = z.object({ name: z.string(), age: z.number() });
+const UserParamsSchema = z.object({ id: z.string() });
+const ListUsersQuerySchema = z.object({ page: z.coerce.number() });
+
+@Controller({ prefix: "/users" })
+class UserController {
+  @RequestBody(CreateUserSchema)
+  @POST()
+  createUser(request: Request): ResponseEntity<User> {
+    // request.body has been fully validated and rewritten. you can safely assert the type!
+    const requestBody = request.body as unknown as z.infer<CreateUserSchema>;
+  
+    const user = this.database.user.create(requestBody.name, requestBody.age)
+
+    return ResponseEntity.ok().body(user);
+  }
+
+  @RequestParam(UserParamsSchema)
+  @GET("/:id")
+  getUser(request: Request): ResponseEntity<z.infer<typeof UserParamsSchema>> {
+    // request.params has been fully validated and rewritten. you can safely assert the type!
+    const params = request.params as unknown as z.infer<typeof UserParamsSchema>;
+
+    const user = this.database.user.findById(params.id);
+
+    return ResponseEntity.ok().body(user);
+  }
+
+  @RequestQuery(ListUsersQuerySchema)
+  @GET()
+  listUsers(request: Request): ResponseEntity<z.infer<typeof ListUsersQuerySchema>> {
+    // request.query has been fully validated and rewritten. you can safely assert the type!
+    const query = request.query as unknown as z.infer<typeof ListUsersQuerySchema>;
+
+    const users = this.database.user.findAll({ page: query.page });
+
+    return ResponseEntity.ok().body(users);
+  }
+}
 ```
 
 ### Redirects

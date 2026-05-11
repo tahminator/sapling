@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Router } from "express";
+import { Router, type ErrorRequestHandler } from "express";
 
 import type { Class, RouteDefinition } from "../types";
 
@@ -9,9 +9,13 @@ import { Sapling } from "../helper/sapling";
 import { Html404ErrorPage } from "../html/404";
 import { methodResolve } from "../types";
 import { _InjectableDeps, _resolve } from "./injectable";
+import { _getRequestSchemas, _parseOrThrow } from "./request";
 import { _getRoutes } from "./route";
 
-export const _ControllerRegistry = new WeakMap<Function, Router>();
+export const _ControllerRegistry: WeakMap<
+  Function,
+  Router | ErrorRequestHandler
+> = new WeakMap<Function, Router | ErrorRequestHandler>();
 
 type ControllerProps =
   | {
@@ -48,8 +52,23 @@ export function Controller({
     _InjectableDeps.set(targetClass, deps);
     const controllerInstance = _resolve(targetClass);
 
+    const errorMiddlewares = routes.reduce((prev, r) => {
+      if (r.method !== "USE") return prev;
+      const fn = controllerInstance[r.fnName];
+      return typeof fn === "function" && fn.length >= 4 ? prev + 1 : prev;
+    }, 0);
+
+    if (errorMiddlewares > 1) {
+      throw new Error(
+        `Invalid @MiddlewareClass class "${targetClass.name}":
+Multiple 4-arg @Middleware() error handlers were found.
+Express will not enter routers in error mode, so an error-middleware class must expose exactly one error handler.
+Split these into separate @MiddlewareClass classes, or merge the logic into a single method.`,
+      );
+    }
+
     for (const { method, path, fnName } of routes) {
-      const fn = controllerInstance[fnName];
+      const fn: Function = controllerInstance[fnName];
       if (typeof fn !== "function") continue;
 
       // When path is a RegExp, use it directly without prefix
@@ -70,17 +89,75 @@ export function Controller({
       }
 
       const methodName = methodResolve[method];
+
+      if (method === "USE" && fn.length >= 4) {
+        const middlewareFn: ErrorRequestHandler = async (
+          err,
+          request,
+          response,
+          next,
+        ) => {
+          try {
+            const result = fn.bind(controllerInstance)(
+              err,
+              request,
+              response,
+              next,
+            );
+
+            if (result instanceof ResponseEntity) {
+              response
+                .contentType("application/json")
+                .status(result.getStatusCode())
+                .set(result.getHeaders())
+                .send(Sapling.serialize(result.getBody()));
+              return;
+            }
+
+            if (result instanceof RedirectView) {
+              response.redirect(result.getUrl());
+              return;
+            }
+          } catch (e) {
+            console.error(e);
+            next(e);
+          }
+        };
+        _ControllerRegistry.set(targetClass, middlewareFn);
+        return;
+      }
+
       router[methodName](fp, async (request, response, next) => {
+        const schemas = _getRequestSchemas(target, fnName);
+        if (schemas) {
+          if (schemas.body) {
+            request.body = await _parseOrThrow(
+              schemas.body,
+              request.body,
+              "reqbody",
+            );
+          }
+          if (schemas.param) {
+            request.params = (await _parseOrThrow(
+              schemas.param,
+              request.params,
+              "reqparams",
+            )) as Record<string, string>;
+          }
+          if (schemas.query) {
+            request.query = (await _parseOrThrow(
+              schemas.query,
+              request.query,
+              "reqquery",
+            )) as Record<string, any>;
+          }
+        }
+
         const result = await fn.bind(controllerInstance)(
           request,
           response,
           next,
         );
-
-        // Middleware (USE) should not send responses, just call next()
-        if (method === "USE") {
-          return;
-        }
 
         if (result instanceof ResponseEntity) {
           response
@@ -96,7 +173,7 @@ export function Controller({
           return;
         }
 
-        if (!response.writableEnded) {
+        if (method !== "USE" && !response.writableEnded) {
           response
             .status(404)
             .send(

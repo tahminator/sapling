@@ -1,6 +1,4 @@
-import { HttpStatus } from "../enum";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Sapling } from "./sapling";
+import { HttpStatus } from "../../enum";
 
 /**
  * Ensure that you define a middleware that can handle this error.
