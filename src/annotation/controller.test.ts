@@ -7,7 +7,7 @@ import { z } from "zod";
 import { RedirectView, ResponseEntity, Sapling } from "../helper";
 import { Html404ErrorPage } from "../html";
 import { Controller } from "./controller";
-import { RequestBody } from "./request";
+import { RequestBody, RequestParam, RequestQuery } from "./request";
 import { GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS, _Route } from "./route";
 
 type Res = {
@@ -354,6 +354,7 @@ describe("controller request schema parsing", () => {
   it("parses @RequestParam and returns 200", async () => {
     @Controller({ prefix: "/users" })
     class UserController {
+      @RequestParam(z.object({ id: z.string() }))
       @GET("/:id")
       public get(request: e.Request): ResponseEntity<unknown> {
         return ResponseEntity.ok().body(request.params);
@@ -371,6 +372,7 @@ describe("controller request schema parsing", () => {
   it("parses @RequestQuery and returns 200", async () => {
     @Controller({ prefix: "/users" })
     class UserController {
+      @RequestQuery(z.object({ page: z.string(), limit: z.string() }))
       @GET()
       public list(request: e.Request): ResponseEntity<unknown> {
         return ResponseEntity.ok().body(request.query);

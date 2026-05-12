@@ -145,11 +145,19 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
             )) as Record<string, string>;
           }
           if (schemas.query) {
-            request.query = (await _parseOrThrow(
+            const parsedQuery = await _parseOrThrow(
               schemas.query,
               request.query,
               "reqquery",
-            )) as Record<string, any>;
+            );
+
+            // Express 5 exposes `request.query` as a readonly getter.
+            // Override it at the instance level so parsed values persist.
+            Object.defineProperty(request, "query", {
+              value: parsedQuery,
+              writable: true,
+              configurable: true,
+            });
           }
         }
 
