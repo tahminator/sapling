@@ -200,12 +200,71 @@ class UserController {
 }
 ```
 
-Make sure to register an error handler middleware:
+Sapling ships with default error middlewares, and you can also write your own.
+Register error middlewares after your regular middlewares and controllers:
 
 ```typescript
-Sapling.loadResponseStatusErrorMiddleware(app, (err, req, res, next) => {
-  res.status(err.status).json({ error: err.message });
-});
+import {
+  DefaultBaseErrorMiddleware,
+  DefaultResponseStatusErrorMiddleware,
+} from "@tahminator/sapling";
+
+// regular middlewares & controllers first
+const middlewares: Class<any>[] = [CookieParserMiddleware];
+middlewares.map(Sapling.resolve).forEach((r) => app.use(r));
+
+const controllers: Class<any>[] = [UserController];
+controllers.map(Sapling.resolve).forEach((r) => app.use(r));
+
+// error middlewares last
+const errorMiddlewares: Class<any>[] = [
+  DefaultResponseStatusErrorMiddleware,
+  DefaultBaseErrorMiddleware,
+];
+errorMiddlewares.map(Sapling.resolve).forEach((r) => app.use(r));
+```
+
+You can also write your own error middlewares. A specific handler should call
+`next(err)` when it does not handle the error, and a base handler should be last
+and return a response:
+
+```typescript
+@MiddlewareClass()
+class ResponseStatusErrorMiddleware {
+  @Middleware()
+  handle(
+    err: unknown,
+    _request: Request,
+    _response: Response,
+    next: NextFunction,
+  ) {
+    if (err instanceof ResponseStatusError) {
+      return ResponseEntity.status(err.status).body({ message: err.message });
+    }
+
+    // MUST call next(err) to continue the chain
+    next(err);
+  }
+}
+
+@MiddlewareClass()
+class BaseErrorMiddleware {
+  @Middleware()
+  handle(
+    err: unknown,
+    _request: Request,
+    _response: Response,
+    _next: NextFunction,
+  ) {
+    console.error("[Error]", err);
+
+    return ResponseEntity.status(500).body({
+      message: "Internal Server Error",
+    });
+
+    // no next(err) since last middleware in chain, we are done propagating
+  }
+}
 ```
 
 ### Middleware
@@ -234,8 +293,39 @@ class CookieParserMiddleware {
 // Register it like any controller
 app.use(Sapling.resolve(CookieParserMiddleware));
 
+// Register middlewares before controllers
+app.use(Sapling.resolve(UserController));
+
 // You can also still choose to load plugins the Express.js way
 app.use(cookieParser());
+```
+
+You can also write custom middlewares as well. It is functionally the same way as Express: call `next()` explicitly to
+continue down the chain:
+
+```typescript
+import { MiddlewareClass, Middleware } from "@tahminator/sapling";
+import { NextFunction, Request, Response } from "express";
+
+@MiddlewareClass()
+class RequestTimerMiddleware {
+  @Middleware()
+  handle(request: Request, _response: Response, next: NextFunction) {
+    const start = Date.now();
+
+    request.on("finish", () => {
+      const elapsedMs = Date.now() - start;
+      console.log(`[Request] ${request.method} ${request.path} ${elapsedMs}ms`);
+    });
+
+    // MUST call next() to continue the chain
+    next();
+  }
+}
+
+// Register middlewares before controllers
+app.use(Sapling.resolve(RequestTimerMiddleware));
+app.use(Sapling.resolve(UserController));
 ```
 
 ### Request Validation
