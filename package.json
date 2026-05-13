@@ -1,6 +1,6 @@
 {
   "name": "@tahminator/sapling",
-  "version": "2.0.0",
+  "version": "2.0.5",
   "author": "Tahmid Ahmed",
   "description": "A library to help you write cleaner Express.js code",
   "repository": {
