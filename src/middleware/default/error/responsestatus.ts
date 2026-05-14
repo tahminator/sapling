@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { Middleware, MiddlewareClass } from "../../annotation";
-import { ResponseEntity, ResponseStatusError } from "../../helper";
+import { Middleware, MiddlewareClass } from "../../../annotation";
+import { ResponseEntity, ResponseStatusError } from "../../../helper";
 
 @MiddlewareClass()
 export class DefaultResponseStatusErrorMiddleware {

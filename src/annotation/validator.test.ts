@@ -8,9 +8,9 @@ import {
   RequestBody,
   RequestParam,
   RequestQuery,
-  _getRequestSchemas,
+  _getValidatorSchema,
   _parseOrThrow,
-} from "./request";
+} from "./validator";
 
 describe("request annotation + parsing", () => {
   it("stores schemas per method and rejects duplicates", () => {
@@ -25,10 +25,10 @@ describe("request annotation + parsing", () => {
       }
     }
 
-    const schemas = _getRequestSchemas(C, "foo");
+    const schemas = _getValidatorSchema(C, "foo");
     expect(schemas).toBeDefined();
-    expect(schemas!.body).toBe(bodySchema);
-    expect(schemas!.param).toBe(paramSchema);
+    expect(schemas!.requestBody).toBe(bodySchema);
+    expect(schemas!.requestParam).toBe(paramSchema);
 
     expect(() => {
       class D {
@@ -39,7 +39,7 @@ describe("request annotation + parsing", () => {
         }
       }
       void D;
-    }).toThrow(/Duplicate request schema for "body"/);
+    }).toThrow(/Duplicate schema for "requestBody"/);
   });
 
   it("_parseOrThrow returns parsed value when valid", async () => {
@@ -84,9 +84,9 @@ describe("request annotation + parsing", () => {
       }
     }
 
-    expect(_getRequestSchemas(C, "a")).toBeUndefined();
-    const bSchemas = _getRequestSchemas(C, "b");
+    expect(_getValidatorSchema(C, "a")).toBeUndefined();
+    const bSchemas = _getValidatorSchema(C, "b");
     expect(bSchemas).toBeDefined();
-    expect(bSchemas!.query).toBe(querySchema);
+    expect(bSchemas!.requestQuery).toBe(querySchema);
   });
 });
