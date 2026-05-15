@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ErrorRequestHandler, Router } from "express";
+import type {
+  ErrorRequestHandler,
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+  Router,
+} from "express";
 
 import e from "express";
 
@@ -10,11 +17,19 @@ import { _ControllerRegistry } from "../annotation/controller";
 type Settings = {
   serialize: (value: any) => string;
   deserialize: (value: string) => any;
+  doc: {
+    openApiPath: string;
+    swaggerPath: string;
+  };
 };
 
-const settings: Settings = {
+export const _settings: Settings = {
   serialize: JSON.stringify,
   deserialize: JSON.parse,
+  doc: {
+    openApiPath: "/openapi.json",
+    swaggerPath: "/swagger.html",
+  },
 };
 
 /**
@@ -110,14 +125,14 @@ export class Sapling {
    * @defaultValue `JSON.stringify`
    */
   static serialize(this: void, value: any): string {
-    return settings.serialize(value);
+    return _settings.serialize(value);
   }
 
   /**
    * Replace the function used for `serialize`.
    */
   static setSerializeFn(this: void, fn: (value: any) => string): void {
-    settings.serialize = fn;
+    _settings.serialize = fn;
   }
 
   /**
@@ -130,13 +145,42 @@ export class Sapling {
    * @defaultValue `JSON.parse`
    */
   static deserialize<T = any>(this: void, value: string): T {
-    return settings.deserialize(value);
+    return _settings.deserialize(value);
   }
 
   /**
    * Replace the function used for `deserialize`
    */
   static setDeserializeFn(this: void, fn: (value: string) => any): void {
-    settings.deserialize = fn;
+    _settings.deserialize = fn;
+  }
+
+  static setOpenApiPath(this: void, path: string): void {
+    _settings.doc.openApiPath = path;
+  }
+
+  static setSwaggerPath(this: void, path: string): void {
+    _settings.doc.swaggerPath = path;
+  }
+
+  static chainHandlers(
+    this: void,
+    handlers: RequestHandler[],
+    request: Request,
+    response: Response,
+    next: NextFunction,
+    index = 0,
+  ): void {
+    if (index >= handlers.length) {
+      next();
+      return;
+    }
+    handlers[index]?.(request, response, (err?: unknown) => {
+      if (err) {
+        next(err);
+        return;
+      }
+      Sapling.chainHandlers(handlers, request, response, next, index + 1);
+    });
   }
 }

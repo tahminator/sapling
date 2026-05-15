@@ -8,7 +8,7 @@ import { Controller, GET, POST } from "../annotation";
 import { HttpStatus } from "../enum";
 import { ResponseStatusError } from "../helper";
 import { ResponseEntity, Sapling } from "../helper";
-import { DefaultResponseStatusErrorMiddleware } from "../middleware/default/responsestatus";
+import { DefaultResponseStatusErrorMiddleware } from "../middleware/default/error/responsestatus";
 
 type Res = {
   x: number;

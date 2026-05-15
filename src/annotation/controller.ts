@@ -5,12 +5,13 @@ import { Router, type ErrorRequestHandler } from "express";
 import type { Class, RouteDefinition } from "../types";
 
 import { ResponseEntity, RedirectView } from "../helper";
+import { _registerControllerClass } from "../helper/openapi";
 import { Sapling } from "../helper/sapling";
 import { Html404ErrorPage } from "../html/404";
 import { methodResolve } from "../types";
 import { _InjectableDeps, _resolve } from "./injectable";
-import { _getRequestSchemas, _parseOrThrow } from "./request";
 import { _getRoutes } from "./route";
+import { _getValidatorSchema, _parseOrThrow } from "./validator";
 
 export const _ControllerRegistry: WeakMap<
   Function,
@@ -43,6 +44,8 @@ export function Controller({
 }: ControllerProps = {}): ClassDecorator {
   return (target: Function) => {
     const targetClass = target as Class<any>;
+
+    _registerControllerClass(target, prefix);
 
     const router = Router();
     const routes: readonly RouteDefinition[] = _getRoutes(target);
@@ -128,25 +131,25 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
       }
 
       router[methodName](fp, async (request, response, next) => {
-        const schemas = _getRequestSchemas(target, fnName);
+        const schemas = _getValidatorSchema(target, fnName);
         if (schemas) {
-          if (schemas.body) {
+          if (schemas.requestBody) {
             request.body = await _parseOrThrow(
-              schemas.body,
+              schemas.requestBody,
               request.body,
               "reqbody",
             );
           }
-          if (schemas.param) {
+          if (schemas.requestParam) {
             request.params = (await _parseOrThrow(
-              schemas.param,
+              schemas.requestParam,
               request.params,
               "reqparams",
             )) as Record<string, string>;
           }
-          if (schemas.query) {
+          if (schemas.requestQuery) {
             const parsedQuery = await _parseOrThrow(
-              schemas.query,
+              schemas.requestQuery,
               request.query,
               "reqquery",
             );
@@ -168,11 +171,19 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
         );
 
         if (result instanceof ResponseEntity) {
+          const body =
+            schemas && schemas.responseBody ?
+              await _parseOrThrow(
+                schemas.responseBody,
+                result.getBody(),
+                "resbody",
+              )
+            : result.getBody();
           response
             .contentType("application/json")
             .status(result.getStatusCode())
             .set(result.getHeaders())
-            .send(Sapling.serialize(result.getBody()));
+            .send(Sapling.serialize(body));
           return;
         }
 

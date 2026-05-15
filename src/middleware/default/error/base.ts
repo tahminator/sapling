@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { Middleware, MiddlewareClass } from "../../annotation";
-import { ResponseEntity } from "../../helper";
+import { Middleware, MiddlewareClass } from "../../../annotation";
+import { ResponseEntity } from "../../../helper";
 
 /**
  * This should be registered last in the middleware chain.
