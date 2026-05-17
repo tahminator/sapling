@@ -1,16 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Router, type ErrorRequestHandler } from "express";
+import {
+  Router,
+  type ErrorRequestHandler,
+  type Request,
+  type Response,
+} from "express";
 
-import type { Class, RouteDefinition } from "../types";
+import type { Class, ExpressRouterMethodKey, RouteDefinition } from "../types";
 
 import { ResponseEntity, RedirectView } from "../helper";
+import { _registerController } from "../helper/openapi";
 import { Sapling } from "../helper/sapling";
 import { Html404ErrorPage } from "../html/404";
 import { methodResolve } from "../types";
 import { _InjectableDeps, _resolve } from "./injectable";
-import { _getRequestSchemas, _parseOrThrow } from "./request";
 import { _getRoutes } from "./route";
+import { _getValidatorSchema, _parseOrThrow } from "./validator";
 
 export const _ControllerRegistry: WeakMap<
   Function,
@@ -43,6 +49,8 @@ export function Controller({
 }: ControllerProps = {}): ClassDecorator {
   return (target: Function) => {
     const targetClass = target as Class<any>;
+
+    _registerController(target, prefix);
 
     const router = Router();
     const routes: readonly RouteDefinition[] = _getRoutes(target);
@@ -98,6 +106,12 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
           next,
         ) => {
           try {
+            await validate({
+              target,
+              fnName,
+              request,
+            });
+
             const result = fn.bind(controllerInstance)(
               err,
               request,
@@ -105,19 +119,15 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
               next,
             );
 
-            if (result instanceof ResponseEntity) {
-              response
-                .contentType("application/json")
-                .status(result.getStatusCode())
-                .set(result.getHeaders())
-                .send(Sapling.serialize(result.getBody()));
-              return;
-            }
-
-            if (result instanceof RedirectView) {
-              response.redirect(result.getUrl());
-              return;
-            }
+            await handleResult({
+              result,
+              response,
+              target,
+              fnName,
+              method,
+              path: path instanceof RegExp ? path.source : (fp as string),
+              isErrorMiddleware: true,
+            });
           } catch (e) {
             console.error(e);
             next(e);
@@ -128,38 +138,11 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
       }
 
       router[methodName](fp, async (request, response, next) => {
-        const schemas = _getRequestSchemas(target, fnName);
-        if (schemas) {
-          if (schemas.body) {
-            request.body = await _parseOrThrow(
-              schemas.body,
-              request.body,
-              "reqbody",
-            );
-          }
-          if (schemas.param) {
-            request.params = (await _parseOrThrow(
-              schemas.param,
-              request.params,
-              "reqparams",
-            )) as Record<string, string>;
-          }
-          if (schemas.query) {
-            const parsedQuery = await _parseOrThrow(
-              schemas.query,
-              request.query,
-              "reqquery",
-            );
-
-            // Express 5 exposes `request.query` as a readonly getter.
-            // Override it at the instance level so parsed values persist.
-            Object.defineProperty(request, "query", {
-              value: parsedQuery,
-              writable: true,
-              configurable: true,
-            });
-          }
-        }
+        await validate({
+          target,
+          fnName,
+          request,
+        });
 
         const result = await fn.bind(controllerInstance)(
           request,
@@ -167,32 +150,110 @@ Split these into separate @MiddlewareClass classes, or merge the logic into a si
           next,
         );
 
-        if (result instanceof ResponseEntity) {
-          response
-            .contentType("application/json")
-            .status(result.getStatusCode())
-            .set(result.getHeaders())
-            .send(Sapling.serialize(result.getBody()));
-          return;
-        }
-
-        if (result instanceof RedirectView) {
-          response.redirect(result.getUrl());
-          return;
-        }
-
-        if (method !== "USE" && !response.writableEnded) {
-          response
-            .status(404)
-            .send(
-              Html404ErrorPage(
-                `Cannot ${methodName.toUpperCase()} ${path instanceof RegExp ? path.source : fp}`,
-              ),
-            );
-        }
+        await handleResult({
+          result,
+          response,
+          target,
+          fnName,
+          method,
+          path: path instanceof RegExp ? path.source : (fp as string),
+        });
       });
     }
 
     _ControllerRegistry.set(targetClass, router);
   };
+}
+
+async function handleResult({
+  result,
+  target,
+  fnName,
+  response,
+  method,
+  path,
+  isErrorMiddleware = false,
+}: {
+  result: any;
+  target: Function;
+  fnName: string;
+  response: Response;
+  method: ExpressRouterMethodKey;
+  path: string;
+  isErrorMiddleware?: boolean;
+}) {
+  const schemas = _getValidatorSchema(target, fnName);
+
+  if (result instanceof ResponseEntity) {
+    const body =
+      schemas && schemas.responseBody ?
+        await _parseOrThrow(
+          schemas.responseBody,
+          result.getBody(),
+          "resbody",
+          fnName,
+        )
+      : result.getBody();
+    response
+      .contentType("application/json")
+      .status(result.getStatusCode())
+      .set(result.getHeaders())
+      .send(Sapling.serialize(body));
+    return;
+  }
+
+  if (result instanceof RedirectView) {
+    response.redirect(result.getUrl());
+    return;
+  }
+
+  if (!isErrorMiddleware && method !== "USE" && !response.writableEnded) {
+    response.status(404).send(Html404ErrorPage(`Cannot ${method} ${path}`));
+  }
+}
+
+async function validate({
+  target,
+  fnName,
+  request,
+}: {
+  target: Function;
+  fnName: string;
+  request: Request;
+}) {
+  const schemas = _getValidatorSchema(target, fnName);
+  if (schemas) {
+    if (schemas.requestBody) {
+      request.body = await _parseOrThrow(
+        schemas.requestBody,
+        request.body,
+        "reqbody",
+        fnName,
+      );
+    }
+    if (schemas.requestParam) {
+      request.params = (await _parseOrThrow(
+        schemas.requestParam,
+        request.params,
+        "reqparams",
+        fnName,
+      )) as Record<string, string>;
+    }
+    if (schemas.requestQuery) {
+      const parsedQuery = await _parseOrThrow(
+        schemas.requestQuery,
+        request.query,
+        "reqquery",
+        fnName,
+      );
+
+      // Express 5 exposes `request.query` as a readonly getter.
+      // Override it at the instance level so parsed values persist.
+      Object.defineProperty(request, "query", {
+        value: parsedQuery,
+        writable: true,
+        configurable: true,
+      });
+    }
+  }
 }

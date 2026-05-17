@@ -1,10 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { Middleware, MiddlewareClass } from "../../annotation";
-import { ParserError, ResponseEntity } from "../../helper";
+import { Middleware, MiddlewareClass } from "../../../annotation";
+import { ResponseEntity, ResponseStatusError } from "../../../helper";
 
+/**
+ * Default error middleware that handles `ResponseStatusError`.
+ * If the default is not suitable, you may also easily write your own.
+ */
 @MiddlewareClass()
-export class DefaultParserErrorMiddleware {
+export class DefaultResponseStatusErrorMiddleware {
   @Middleware()
   handle(
     err: unknown,
@@ -12,7 +16,7 @@ export class DefaultParserErrorMiddleware {
     _response: Response,
     next: NextFunction,
   ) {
-    if (err instanceof ParserError) {
+    if (err instanceof ResponseStatusError) {
       return ResponseEntity.status(err.status).body({ message: err.message });
     }
 

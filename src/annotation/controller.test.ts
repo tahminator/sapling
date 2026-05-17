@@ -7,8 +7,8 @@ import { z } from "zod";
 import { RedirectView, ResponseEntity, Sapling } from "../helper";
 import { Html404ErrorPage } from "../html";
 import { Controller } from "./controller";
-import { RequestBody, RequestParam, RequestQuery } from "./request";
 import { GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS, _Route } from "./route";
+import { RequestBody, RequestParam, RequestQuery } from "./validator";
 
 type Res = {
   x: number;
