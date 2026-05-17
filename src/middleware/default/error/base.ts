@@ -1,12 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { Middleware, MiddlewareClass } from "../../annotation";
-import { ResponseEntity } from "../../helper";
+import { Middleware, MiddlewareClass } from "../../../annotation";
+import { ResponseEntity } from "../../../helper";
 
 /**
  * This should be registered last in the middleware chain.
  *
  * All exception messages are hidden from the request by default.
+ * If the default is not suitable, you may also easily write your own.
  */
 @MiddlewareClass()
 export class DefaultBaseErrorMiddleware {

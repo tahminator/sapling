@@ -19,9 +19,13 @@ A lightweight Express.js dependency injection & route abstraction library.
   * [Responses](#responses)
   * [Error Handling](#error-handling)
   * [Middleware](#middleware)
-  * [Request Validation](#request-validation)
+  * [Request/Response Validation](#requestresponse-validation)
   * [Redirects](#redirects)
   * [Dependency Injection](#dependency-injection)
+  * [OpenAPI Support](#openapi-support)
+    + [Automatic Spec Generation](#automatic-spec-generation)
+    + [Adding Documentation with Decorators](#adding-documentation-with-decorators)
+    + [Customizing Paths](#customizing-paths)
   * [Custom Serialization](#custom-serialization)
 - [Advanced Setup](#advanced-setup)
   * [Automatically import controllers](#automatically-import-controllers)
@@ -107,6 +111,16 @@ middlewares.map(Sapling.resolve).forEach((r) => app.use(r));
 const controllers: Class<any>[] = [HelloController, UserController];
 controllers.map(Sapling.resolve).forEach((r) => app.use(r));
 
+// @MiddlewareClass handling custom errors should be handled after everything else.
+// Sapling includes basic `DefaultResponseStatusErrorMiddleware` & `BaseErrorMiddleware`
+// but you may write your own, even to replace these defaults!
+const errorMiddlewares: Class<any>[] = [
+  DefaultParserErrorMiddleware,
+  DefaultResponseStatusErrorMiddleware,
+  DefaultBaseErrorMiddleware,
+];
+errorMiddlewares.map(Sapling.resolve).forEach((r) => app.use(r));
+
 app.listen(3000);
 ```
 
@@ -142,12 +156,9 @@ Sapling supports the usual suspects:
 - `@PUT(path?)`
 - `@DELETE(path?)`
 - `@PATCH(path?)`
-- `@Middleware(path?)` - for middleware
-- `@RequestBody(schema)` - validate & parse the request body
-- `@RequestParam(schema)` - validate & parse route params
-- `@RequestQuery(schema)` - validate & parse the query string
+- `@Middleware(path?)` (alias of `@USE(path?)`) - for middleware
 
-Path defaults to `"/"` if you don't pass one. The request schema decorators accept any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator (e.g. Zod, Valibot, ArkType).
+Path defaults to `"/"` if you don't pass one.
 
 ### Responses
 
@@ -218,6 +229,7 @@ controllers.map(Sapling.resolve).forEach((r) => app.use(r));
 
 // error middlewares last
 const errorMiddlewares: Class<any>[] = [
+  DefaultParserErrorMiddleware,
   DefaultResponseStatusErrorMiddleware,
   DefaultBaseErrorMiddleware,
 ];
@@ -328,11 +340,18 @@ app.use(Sapling.resolve(RequestTimerMiddleware));
 app.use(Sapling.resolve(UserController));
 ```
 
-### Request Validation
+### Request/Response Validation
 
-Validate and transform request bodies, route params, and query strings at the controller level using `@RequestBody`, `@RequestParam`, and `@RequestQuery`. These decorators accept any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator (Zod, Valibot, ArkType, etc.).
+Validate and transform request request & response inputs / outputs.
 
-If validation fails, a `ParserError` is thrown, which Express handles as a `400 Bad Request` by default:
+- `@RequestBody(schema)` - validate & parse the request body
+- `@RequestParam(schema)` - validate & parse route params
+- `@RequestQuery(schema)` - validate & parse the query string
+- `@ResponseBody(schema)` - validate & parse the response body
+
+These decorators accept any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validation library (Zod, Valibot, ArkType, etc.).
+
+If validation fails, a `ParserError` is thrown. You may register `DefaultParserErrorMiddleware` for default error handling or write your own:
 
 ```typescript
 import { z } from "zod";
@@ -340,6 +359,7 @@ import { z } from "zod";
 const CreateUserSchema = z.object({ name: z.string(), age: z.number() });
 const UserParamsSchema = z.object({ id: z.string() });
 const ListUsersQuerySchema = z.object({ page: z.coerce.number() });
+const ListUserIdsResponseSchema = z.array(z.object({ id: z.int() }));
 
 @Controller({ prefix: "/users" })
 class UserController {
@@ -366,14 +386,15 @@ class UserController {
   }
 
   @RequestQuery(ListUsersQuerySchema)
+  @ResponseBody(ListUserIdsResponseSchema) // since we have this annotation, it will a) strip all extra fields & b) throw if we are missing any expected fields.
   @GET()
-  listUsers(request: Request): ResponseEntity<z.infer<typeof ListUsersQuerySchema>> {
+  listUserIds(request: Request): ResponseEntity<z.infer<typeof ListUserIdsResponseSchema>> {
     // request.query has been fully validated and rewritten. you can safely assert the type!
     const query = request.query as unknown as z.infer<typeof ListUsersQuerySchema>;
 
-    const users = this.database.user.findAll({ page: query.page });
+    const userIds = this.database.user.findAll({ page: query.page }).map(u => u.id);
 
-    return ResponseEntity.ok().body(users);
+    return ResponseEntity.ok().body(userIds);
   }
 }
 ```
@@ -430,6 +451,134 @@ class UserRepository {
     return this.db.query("SELECT * FROM users");
   }
 }
+```
+
+### OpenAPI Support
+
+Sapling automatically generates OpenAPI 3.0 specifications from your controllers and serves them with Swagger UI.
+
+#### Automatic Spec Generation
+
+Configure your API metadata and serve the OpenAPI spec:
+
+```typescript
+import {
+  Sapling,
+  DefaultOpenApiMiddleware,
+  DefaultSwaggerMiddleware,
+} from "@tahminator/sapling";
+
+// Configure API metadata
+Sapling.Extras.swaggerAndOpenApi.setMetadata({
+  title: "My API",
+  version: "1.0.0",
+  description: "API documentation for my application",
+});
+
+// Serve OpenAPI spec at /openapi.json and Swagger UI at /swagger.html
+// modify default routes with `Sapling.Extras.swaggerAndOpenApi`
+const middlewares = [
+  DefaultOpenApiMiddleware,
+  DefaultSwaggerMiddleware.Serve,
+  DefaultSwaggerMiddleware.Setup,
+];
+middlewares.map(Sapling.resolve).forEach((r) => app.use(r));
+
+// Register your controllers after the OpenAPI middlewares
+const controllers = [BaseController, UserController];
+controllers.map(Sapling.resolve).forEach((r) => app.use(r));
+```
+
+The OpenAPI spec is automatically generated from your `@RequestBody`, `@RequestParam`, `@RequestQuery`, and `@ResponseBody` decorators.
+
+#### Adding Documentation with Decorators
+
+Use `@ControllerSchema` and `@RouteSchema` to add rich documentation:
+
+```typescript
+import {
+  Controller,
+  ControllerSchema,
+  RouteSchema,
+  GET,
+  POST,
+  RequestBody,
+  ResponseBody,
+  HttpStatus,
+} from "@tahminator/sapling";
+import { z } from "zod";
+
+const UserSchema = z.object({
+  id: z.string().describe("User ID"),
+  name: z.string().describe("User's full name"),
+  email: z.string().email().describe("User's email address"),
+});
+
+const CreateUserSchema = z.object({
+  name: z.string().min(1).describe("User's full name"),
+  email: z.string().email().describe("User's email address"),
+});
+
+const ErrorSchema = z.object({
+  message: z.string().describe("Error message"),
+});
+
+@ControllerSchema({
+  title: "Users",
+  description: "User management endpoints",
+})
+@Controller({ prefix: "/users" })
+class UserController {
+  @RouteSchema({
+    summary: "List all users",
+    description: "Returns a paginated list of all users in the system",
+    responses: [
+      {
+        statusCode: HttpStatus.OK,
+        description: "List of users",
+        schema: z.array(UserSchema),
+      },
+    ],
+  })
+  @ResponseBody(z.array(UserSchema))
+  @GET()
+  listUsers(): ResponseEntity<z.infer<typeof UserSchema>[]> {
+    return ResponseEntity.ok().body([...]);
+  }
+
+  @RouteSchema({
+    summary: "Create a new user",
+    description: "Creates a new user with the provided information",
+    responses: [
+      {
+        statusCode: HttpStatus.CREATED,
+        description: "User created successfully",
+        schema: UserSchema,
+      },
+      {
+        statusCode: HttpStatus.BAD_REQUEST,
+        description: "Invalid request data",
+        schema: ErrorSchema,
+      },
+    ],
+  })
+  @RequestBody(CreateUserSchema)
+  @ResponseBody(UserSchema)
+  @POST()
+  createUser(request: Request): ResponseEntity<z.infer<typeof UserSchema>> {
+    const body = request.body as z.infer<typeof CreateUserSchema>;
+    return ResponseEntity.status(HttpStatus.CREATED).body({...});
+  }
+}
+```
+
+#### Customizing Paths
+
+By default, OpenAPI spec is served at `/openapi.json` and Swagger UI at `/swagger.html`. Customize these paths:
+
+```typescript
+Sapling.Extras.swaggerAndOpenApi.setOpenApiPath("/api-spec.json");
+Sapling.Extras.swaggerAndOpenApi.setSwaggerPath("/api-docs");
 ```
 
 ### Custom Serialization

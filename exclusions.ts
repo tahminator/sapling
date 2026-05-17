@@ -5,4 +5,8 @@
 
 const baseDir = "src";
 
-export const exclusions = [`${baseDir}/**/*.test.ts`, `${baseDir}/__test__/**`];
+export const exclusions = [
+  `${baseDir}/**/*.test.ts`,
+  `${baseDir}/__test__/**`,
+  `${baseDir}/helper/error/*.ts`, // basic error wrappers
+];

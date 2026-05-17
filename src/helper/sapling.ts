@@ -1,20 +1,41 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ErrorRequestHandler, Router } from "express";
+import type {
+  ErrorRequestHandler,
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+  Router,
+} from "express";
 
 import e from "express";
 
 import type { Class, ExpressMiddlewareFn } from "../types";
+import type { OpenAPIMetadata } from "./openapi";
 
 import { _ControllerRegistry } from "../annotation/controller";
 
 type Settings = {
   serialize: (value: any) => string;
   deserialize: (value: string) => any;
+  doc: {
+    openApiPath: string;
+    swaggerPath: string;
+    metadata: OpenAPIMetadata;
+  };
 };
 
-const settings: Settings = {
+export const _settings: Settings = {
   serialize: JSON.stringify,
   deserialize: JSON.parse,
+  doc: {
+    openApiPath: "/openapi.json",
+    swaggerPath: "/swagger.html",
+    metadata: {
+      title: "API",
+      version: "1.0.0",
+    },
+  },
 };
 
 /**
@@ -110,14 +131,14 @@ export class Sapling {
    * @defaultValue `JSON.stringify`
    */
   static serialize(this: void, value: any): string {
-    return settings.serialize(value);
+    return _settings.serialize(value);
   }
 
   /**
    * Replace the function used for `serialize`.
    */
   static setSerializeFn(this: void, fn: (value: any) => string): void {
-    settings.serialize = fn;
+    _settings.serialize = fn;
   }
 
   /**
@@ -130,13 +151,90 @@ export class Sapling {
    * @defaultValue `JSON.parse`
    */
   static deserialize<T = any>(this: void, value: string): T {
-    return settings.deserialize(value);
+    return _settings.deserialize(value);
   }
 
   /**
    * Replace the function used for `deserialize`
    */
   static setDeserializeFn(this: void, fn: (value: string) => any): void {
-    settings.deserialize = fn;
+    _settings.deserialize = fn;
+  }
+
+  /**
+   * Modify extra settings
+   */
+  static Extras = {
+    /**
+     * Modify default settings applied to OpenAPI & Swagger
+     */
+    swaggerAndOpenApi: {
+      /**
+       * Set base OpenAPI metadata values.
+       *
+       * @default { title: "API", version: "1.0.0" }
+       */
+      setMetadata(metadata: OpenAPIMetadata): void {
+        _settings.doc.metadata = metadata;
+      },
+
+      /**
+       * change default endpoint that will serve OpenAPI spec.
+       * Swagger will also load this endpoint on load.
+       *
+       * @default `/openapi.json`
+       */
+      setOpenApiPath(this: void, path: string): void {
+        _settings.doc.openApiPath = path;
+      },
+      /**
+       * change Swagger endpoint.
+       *
+       * @default `/swagger.html`
+       */
+      setSwaggerPath(this: void, path: string): void {
+        _settings.doc.swaggerPath = path;
+      },
+    },
+  };
+
+  /**
+   * This method can be used in a `@MiddlewareClass` to register any libraries
+   * that expect you to register multiple registers at once. An example is `swagger-ui-express`
+   *
+   * @example
+   * ```ts
+   * ⠀@MiddlewareClass()
+   *  class Serve {
+   *    // `swagger.serve` returns multiple Express handlers for all the assets and routes
+   *    // that will be served
+   *    private readonly handlers: RequestHandler[] = swagger.serve;
+   *
+   *   ⠀@Middleware(_settings.doc.swaggerPath)
+   *    handle(request: Request, response: Response, next: NextFunction) {
+   *      return Sapling.chainHandlers(this.handlers, request, response, next);
+   *    }
+   *  }
+   * ```
+   */
+  static chainHandlers(
+    this: void,
+    handlers: RequestHandler[],
+    request: Request,
+    response: Response,
+    next: NextFunction,
+    index = 0,
+  ): void {
+    if (index >= handlers.length) {
+      next();
+      return;
+    }
+    handlers[index]?.(request, response, (err?: unknown) => {
+      if (err) {
+        next(err);
+        return;
+      }
+      Sapling.chainHandlers(handlers, request, response, next, index + 1);
+    });
   }
 }
