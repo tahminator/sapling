@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { MiddlewareClass, GET } from "../../../annotation";
+import { HttpStatus } from "../../../enum";
 import { _settings, ResponseEntity } from "../../../helper";
 import { HealthRegistrar } from "../../health/registrar";
 
@@ -26,9 +27,9 @@ export class DefaultHealthMiddleware {
     }>
   > {
     const up = await this.healthRegistrar._readiness();
-    return ResponseEntity.ok().body({
-      up,
-    });
+    return ResponseEntity.status(
+      up ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE,
+    ).body({ up });
   }
 
   @GET(_settings.health.live.path)
@@ -42,8 +43,8 @@ export class DefaultHealthMiddleware {
     }>
   > {
     const up = await this.healthRegistrar._liveness();
-    return ResponseEntity.ok().body({
-      up,
-    });
+    return ResponseEntity.status(
+      up ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE,
+    ).body({ up });
   }
 }

@@ -20,14 +20,14 @@ describe("DefaultHealthMiddleware", () => {
   });
 
   describe("GET /readyz", () => {
-    it("returns { up: false } before _markLive()", async () => {
+    it("returns 503 { up: false } before _markLive()", async () => {
       vi.spyOn(registrar, "_readiness").mockResolvedValue(false);
       const res = await request(app).get("/readyz");
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
       expect(res.body).toEqual({ up: false });
     });
 
-    it("returns { up: true } when all checks pass", async () => {
+    it("returns 200 { up: true } when all checks pass", async () => {
       vi.spyOn(registrar, "_readiness").mockResolvedValue(true);
       const res = await request(app).get("/readyz");
       expect(res.status).toBe(200);
@@ -36,14 +36,14 @@ describe("DefaultHealthMiddleware", () => {
   });
 
   describe("GET /livez", () => {
-    it("returns { up: false } before _markLive()", async () => {
+    it("returns 503 { up: false } before _markLive()", async () => {
       vi.spyOn(registrar, "_liveness").mockResolvedValue(false);
       const res = await request(app).get("/livez");
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
       expect(res.body).toEqual({ up: false });
     });
 
-    it("returns { up: true } after _markLive()", async () => {
+    it("returns 200 { up: true } after _markLive()", async () => {
       vi.spyOn(registrar, "_liveness").mockResolvedValue(true);
       const res = await request(app).get("/livez");
       expect(res.status).toBe(200);
