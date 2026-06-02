@@ -26,6 +26,10 @@ A lightweight Express.js dependency injection & route abstraction library.
     + [Automatic Spec Generation](#automatic-spec-generation)
     + [Adding Documentation with Decorators](#adding-documentation-with-decorators)
     + [Customizing Paths](#customizing-paths)
+  * [Health Checks](#health-checks)
+    + [Liveness and Readiness Probes](#liveness-and-readiness-probes)
+    + [Registering Custom Readiness Checks](#registering-custom-readiness-checks)
+    + [Customizing Health Paths](#customizing-health-paths)
   * [Custom Serialization](#custom-serialization)
 - [Advanced Setup](#advanced-setup)
   * [Automatically import controllers](#automatically-import-controllers)
@@ -97,9 +101,10 @@ class UserController {
   }
 }
 
-// you still have full access of app to do whatever you want!
-const app = express();
-Sapling.registerApp(app);
+// registerApp returns the app back to you - use the returned app instance
+// so Sapling can inject some post-startup hooks into the app.
+// BUT, you still have full access of app to do whatever you want!
+const app = Sapling.registerApp(express());
 
 // @MiddlewareClass should be registered first before @Controller and should be registered in order
 // @Injectable classes will automatically be formed into singletons by Sapling behind the scenes!
@@ -579,6 +584,57 @@ By default, OpenAPI spec is served at `/openapi.json` and Swagger UI at `/swagge
 ```typescript
 Sapling.Extras.swaggerAndOpenApi.setOpenApiPath("/api-spec.json");
 Sapling.Extras.swaggerAndOpenApi.setSwaggerPath("/api-docs");
+```
+
+### Health Checks
+
+#### Liveness and Readiness Probes
+
+Register `DefaultHealthMiddleware` to expose two health endpoints:
+
+- `GET /live` — **liveness probe**: returns `{ up: true }` once the server has started listening. Use this to tell your orchestrator the process is alive.
+- `GET /ready` — **readiness probe**: returns `{ up: true }` once the server is live *and* all registered readiness checks pass. Use this to gate traffic until your app is fully initialized.
+
+```typescript
+import { Sapling, DefaultHealthMiddleware } from "@tahminator/sapling";
+
+const app = Sapling.registerApp(express());
+
+app.use(Sapling.resolve(DefaultHealthMiddleware));
+
+app.listen(3000); // _markLive() is called automatically once the server is listening
+```
+
+> [!IMPORTANT]
+> `Sapling.registerApp` returns `express.App` - please use that as your `app` object inside of your server. There is a small post-startup hook applied via a proxy, in which the liveness probe is enabled from such.
+
+#### Registering Custom Readiness Checks
+
+Inject `HealthRegistrar` into any `@Injectable` or controller to add readiness checks. A check is any function returning `boolean | Promise<boolean>`. If any check returns `false` (or throws), `/ready` reports `{ up: false }`.
+
+```typescript
+import { Injectable, HealthRegistrar } from "@tahminator/sapling";
+
+@Injectable([HealthRegistrar])
+class DatabaseService {
+  constructor(
+    private readonly db: Database,
+    private readonly healthRegistrar: HealthRegistrar,
+  ) {
+    healthRegistrar.add(async () => {
+      return this.db.isConnected();
+    });
+  }
+}
+```
+
+#### Customizing Health Paths
+
+The default paths are `/live` and `/ready`. Override them before registering `DefaultHealthMiddleware`:
+
+```typescript
+Sapling.Extras.health.setLivePath("/healthz/live");
+Sapling.Extras.health.setReadyPath("/healthz/ready");
 ```
 
 ### Custom Serialization
