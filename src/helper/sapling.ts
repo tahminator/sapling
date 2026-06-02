@@ -14,10 +14,20 @@ import type { Class, ExpressMiddlewareFn } from "../types";
 import type { OpenAPIMetadata } from "./openapi";
 
 import { _ControllerRegistry } from "../annotation/controller";
+import { _InjectableRegistry } from "../annotation/injectable";
+import { HealthRegistrar } from "../middleware/health/registrar";
 
 type Settings = {
   serialize: (value: any) => string;
   deserialize: (value: string) => any;
+  health: {
+    ready: {
+      path: string;
+    };
+    live: {
+      path: string;
+    };
+  };
   doc: {
     openApiPath: string;
     swaggerPath: string;
@@ -28,6 +38,14 @@ type Settings = {
 export const _settings: Settings = {
   serialize: JSON.stringify,
   deserialize: JSON.parse,
+  health: {
+    ready: {
+      path: "/readyz",
+    },
+    live: {
+      path: "/livez",
+    },
+  },
   doc: {
     openApiPath: "/openapi.json",
     swaggerPath: "/swagger.html",
@@ -111,14 +129,44 @@ export class Sapling {
    * import { Sapling } from "@tahminator/sapling";
    * import express from "express";
    *
-   * const app = express();
-   *
-   * app.registerApp(app);
+   * // returns the exact same `express.App` type back to you!
+   * const app = Sapling.registerApp(express());
    * ```
    */
-  static registerApp(app: e.Express): void {
+  static registerApp(app: e.Express): e.Express {
     app.use(e.text({ type: "application/json" }));
     app.use(Sapling.json());
+
+    return new Proxy(app, {
+      get(target, prop, receiver) {
+        if (prop === "listen") {
+          const originalListen = target[prop];
+          return function (...args: any[]) {
+            const server = originalListen.apply(target, args as any);
+
+            server.once("listening", () => {
+              Sapling._onPostStartup();
+              console.log(
+                "Sapling successfully initialized post-startup hooks on server start",
+              );
+            });
+
+            return server;
+          };
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+  }
+
+  /**
+   * @internal
+   * visible for testing
+   */
+  static _onPostStartup(): void {
+    const healthRegistrar: HealthRegistrar | undefined =
+      _InjectableRegistry.get(HealthRegistrar);
+    healthRegistrar?._markLive();
   }
 
   /**
@@ -194,6 +242,27 @@ export class Sapling {
        */
       setSwaggerPath(this: void, path: string): void {
         _settings.doc.swaggerPath = path;
+      },
+    },
+    /**
+     * Modify default settings applied to health / readiness / liveness.
+     */
+    health: {
+      /**
+       * change default endpoint that ready endpoint will be served on.
+       *
+       * @default `/readyz`
+       */
+      setReadyPath(this: void, path: string): void {
+        _settings.health.ready.path = path;
+      },
+      /**
+       * change default endpoint that live endpoint will be served on.
+       *
+       * @default `/livez`
+       */
+      setLivePath(this: void, path: string): void {
+        _settings.health.live.path = path;
       },
     },
   };
