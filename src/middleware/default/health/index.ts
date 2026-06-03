@@ -8,7 +8,14 @@ import { HealthRegistrar } from "../../health/registrar";
 /**
  * Enable the serving of `ready` and `live` endpoints.
  *
- * Configure any middleware-specific settings with `Sapling.Extras.health`
+ * `live` and `ready` endpoint returns 200 with `{ up: true }`, else 503 with `{ up: false }`
+ *
+ * Customize endpoint paths with `Sapling.Extras.health`.
+ * Register readiness checks via {@link HealthRegistrar}.
+ *
+ * explanation of `liveness` vs. `readiness`
+ * @see https://kubernetes.io/docs/concepts/workloads/pods/probes/#liveness-probe
+ * @see https://kubernetes.io/docs/concepts/workloads/pods/probes/#readiness-probe
  */
 @MiddlewareClass({
   deps: [HealthRegistrar],
