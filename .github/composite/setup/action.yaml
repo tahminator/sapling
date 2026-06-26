@@ -12,6 +12,10 @@ inputs:
     description: "GitHub token used to send message"
     required: false
     default: ${{ github.token }}
+  SECRETS:
+    description: "Pass toJson(secrets) from the calling workflow to expose all secrets as env vars."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -22,7 +26,7 @@ runs:
         GPG_PASSPHRASE: ${{ inputs.GPG_PASSPHRASE }}
         GPG_PRIVATE_KEY: ${{ inputs.GPG_PRIVATE_KEY }}
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-        GITHUB_SECRETS_JSON: ${{ toJson(secrets) }}
+        GITHUB_SECRETS_JSON: ${{ inputs.SECRETS }}
 
     - name: Run tests
       shell: bash
