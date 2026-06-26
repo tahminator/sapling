@@ -21,12 +21,12 @@ runs:
   using: "composite"
   steps:
     - name: Setup
-      uses: tahminator/pipeline/actions/setup@4a312b91
+      uses: tahminator/pipeline/actions/setup@ad3a6c70c6ddd81909e6b22e2b622e0b8c1208c4
       with:
         GPG_PASSPHRASE: ${{ inputs.GPG_PASSPHRASE }}
         GPG_PRIVATE_KEY: ${{ inputs.GPG_PRIVATE_KEY }}
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-        GITHUB_SECRETS_JSON: ${{ inputs.SECRETS }}
+        SECRETS: ${{ inputs.SECRETS }}
 
     - name: Run tests
       shell: bash

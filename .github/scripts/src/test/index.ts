@@ -11,6 +11,8 @@ async function main() {
   const envClient = EnvClient.create(EnvClientStrategy.GIT_CRYPT);
   const { sonarToken } = parseCiEnv(await envClient.readFromEnv(".env.ci"));
 
+  console.log(`len(TEST) is ${process.env.TEST?.length}`);
+
   const sonarClient = new SonarScannerClient({
     auth: {
       token: sonarToken,
