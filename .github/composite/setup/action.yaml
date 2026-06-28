@@ -12,16 +12,21 @@ inputs:
     description: "GitHub token used to send message"
     required: false
     default: ${{ github.token }}
+  SECRETS:
+    description: "Pass toJson(secrets) from the calling workflow to expose all secrets as env vars."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
   steps:
     - name: Setup
-      uses: tahminator/pipeline/actions/setup@1.0.18
+      uses: tahminator/pipeline/actions/setup@ad3a6c70c6ddd81909e6b22e2b622e0b8c1208c4
       with:
         GPG_PASSPHRASE: ${{ inputs.GPG_PASSPHRASE }}
         GPG_PRIVATE_KEY: ${{ inputs.GPG_PRIVATE_KEY }}
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        SECRETS: ${{ inputs.SECRETS }}
 
     - name: Run tests
       shell: bash
