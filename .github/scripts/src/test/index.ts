@@ -1,15 +1,10 @@
-import {
-  EnvClient,
-  EnvClientStrategy,
-  SonarScannerClient,
-} from "@tahminator/pipeline";
+import { SonarScannerClient } from "@tahminator/pipeline";
 import { $ } from "bun";
 
 import { exclusions } from "../../../../exclusions";
 
 async function main() {
-  const envClient = EnvClient.create(EnvClientStrategy.GIT_CRYPT);
-  const { sonarToken } = parseCiEnv(await envClient.readFromEnv(".env.ci"));
+  const { sonarToken } = parseCiEnv(process.env);
 
   const sonarClient = new SonarScannerClient({
     auth: {
@@ -33,7 +28,7 @@ async function main() {
   await sonarClient.uploadTestCoverage();
 }
 
-function parseCiEnv(ciEnv: Record<string, string>) {
+function parseCiEnv(ciEnv: Record<string, string | undefined>) {
   const sonarToken = (() => {
     const v = ciEnv["SONAR_TOKEN"];
     if (!v) {
