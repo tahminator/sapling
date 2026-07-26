@@ -1,21 +1,17 @@
 import {
-  EnvClient,
-  EnvClientStrategy,
   GitHubClient,
-  Utils,
   VersioningClient,
   VersionUpdatingStrategy,
 } from "@tahminator/pipeline";
 
 export async function main() {
-  const envClient = EnvClient.create(EnvClientStrategy.GIT_CRYPT);
-  const { githubAppAppId, githubAppInstallationId, githubAppPrivateKeyB64 } =
-    parseCiEnv(await envClient.readFromEnv(".env.ci"));
+  const { githubAppAppId, githubAppInstallationId, githubAppPemContent } =
+    parseCiEnv(process.env);
 
   const ghClient = await GitHubClient.createWithGithubAppToken({
     appId: githubAppAppId,
     installationId: githubAppInstallationId,
-    privateKey: await Utils.decodeBase64EncodedString(githubAppPrivateKeyB64),
+    privateKey: githubAppPemContent,
   });
 
   const versioningClient = new VersioningClient(
@@ -34,9 +30,9 @@ export async function main() {
   });
 }
 
-function parseCiEnv(ciEnv: Record<string, string>) {
+function parseCiEnv(ciEnv: Record<string, string | undefined>) {
   const githubAppAppId = (() => {
-    const v = ciEnv["GITHUB_APP_APP_ID"];
+    const v = ciEnv["_GITHUB_APP_APP_ID"];
     if (!v) {
       throw new Error("Missing GITHUB_APP_APP_ID from .env.ci");
     }
@@ -44,22 +40,26 @@ function parseCiEnv(ciEnv: Record<string, string>) {
   })();
 
   const githubAppInstallationId = (() => {
-    const v = ciEnv["GITHUB_APP_INSTALLATION_ID"];
+    const v = ciEnv["_GITHUB_APP_INSTALLATION_ID"];
     if (!v) {
       throw new Error("Missing GITHUB_APP_INSTALLATION_ID from .env.ci");
     }
     return v;
   })();
 
-  const githubAppPrivateKeyB64 = (() => {
-    const v = ciEnv["GITHUB_APP_PRIVATE_KEY_B64"];
+  const githubAppPemContent = (() => {
+    const v = ciEnv["_GITHUB_APP_PEM_CONTENT"];
     if (!v) {
       throw new Error("Missing GITHUB_APP_PRIVATE_KEY_B64 from .env.ci");
     }
     return v;
   })();
 
-  return { githubAppAppId, githubAppInstallationId, githubAppPrivateKeyB64 };
+  return {
+    githubAppAppId,
+    githubAppInstallationId,
+    githubAppPemContent,
+  };
 }
 
 main()
