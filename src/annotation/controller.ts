@@ -198,7 +198,11 @@ async function handleResult({
       .contentType("application/json")
       .status(result.getStatusCode())
       .set(result.getHeaders())
-      .send(Sapling.serialize(body));
+      .send(
+        result._isOverrideSerde() ?
+          JSON.stringify(body)
+        : Sapling.serialize(body),
+      );
     return;
   }
 

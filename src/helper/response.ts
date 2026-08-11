@@ -15,11 +15,18 @@ export class ResponseEntity<T> {
   private readonly _statusCode: number;
   private readonly _headers: HttpHeaders = {};
   private readonly _body: T;
+  private readonly _overrideSerde: boolean;
 
-  constructor(body: T, headers: HttpHeaders = {}, statusCode: number = 200) {
+  constructor(
+    body: T,
+    headers: HttpHeaders = {},
+    statusCode: number = 200,
+    overrideSerde: boolean = false,
+  ) {
     this._body = body;
     this._headers = headers;
     this._statusCode = statusCode;
+    this._overrideSerde = overrideSerde;
   }
 
   /**
@@ -66,6 +73,14 @@ export class ResponseEntity<T> {
   getBody(): T {
     return this._body;
   }
+
+  /**
+   * Returns if this response should override `Sapling.serialize`/`Sapling.deserialize`,
+   * and use `JSON.stringify`/`JSON.parse` natively instead.
+   */
+  _isOverrideSerde(): boolean {
+    return this._overrideSerde;
+  }
 }
 
 /**
@@ -77,6 +92,7 @@ export class ResponseEntity<T> {
 export class ResponseEntityBuilder {
   private readonly _statusCode: number;
   private _headers: HttpHeaders = {};
+  private _overrideSerde: boolean = false;
 
   constructor(statusCode: number) {
     this._statusCode = statusCode;
@@ -98,10 +114,20 @@ export class ResponseEntityBuilder {
     return this;
   }
 
+  overrideSerde(b: boolean): this {
+    this._overrideSerde = b;
+    return this;
+  }
+
   /**
    * Set the response body.
    */
   body<T>(body: T): ResponseEntity<T> {
-    return new ResponseEntity<T>(body, this._headers, this._statusCode);
+    return new ResponseEntity<T>(
+      body,
+      this._headers,
+      this._statusCode,
+      this._overrideSerde,
+    );
   }
 }

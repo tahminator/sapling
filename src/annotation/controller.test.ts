@@ -318,6 +318,25 @@ describe("controller logic", () => {
     expect(response.statusCode).toBe(404);
     expect(response.text).toBe(Html404ErrorPage("Cannot GET /abc"));
   });
+
+  it("test ResponseEntity overrideSerde", async () => {
+    const jsonStringifySpy = vi.spyOn(JSON, "stringify");
+
+    @Controller({ prefix: "/abc" })
+    class ABCController {
+      @GET()
+      public getAbc(request: e.Request): ResponseEntity<unknown> {
+        return ResponseEntity.ok().overrideSerde(true).body(request.body);
+      }
+    }
+
+    app!.use(Sapling.resolve(ABCController));
+
+    const response = await request(app!).get("/abc");
+
+    expect(response.statusCode).toBe(200);
+    expect(jsonStringifySpy).toHaveBeenCalledOnce();
+  });
 });
 
 describe("controller request schema parsing", () => {
