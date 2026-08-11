@@ -1,1 +1,0 @@
-.env.ci filter=git-crypt diff=git-crypt

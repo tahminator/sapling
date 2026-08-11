@@ -12,6 +12,10 @@ export type OpenAPIMetadata = {
   title: string;
   version: string;
   description?: string;
+  /**
+   * Use `Sapling.serialize`/`Sapling.deserialize` over `JSON.stringify`/`JSON.parse`
+   */
+  useSaplingSerde?: boolean;
 };
 
 class OpenAPIGenerator {

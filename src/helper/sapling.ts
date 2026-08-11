@@ -52,6 +52,7 @@ export const _settings: Settings = {
     metadata: {
       title: "API",
       version: "1.0.0",
+      useSaplingSerde: false,
     },
   },
 };

@@ -24,6 +24,6 @@ import { generateOpenApiSpec } from "../../../helper/openapi";
 export class DefaultOpenApiMiddleware {
   @GET(_settings.doc.openApiPath)
   handle(_request: Request, _response: Response, _next: NextFunction) {
-    return ResponseEntity.ok().body(generateOpenApiSpec());
+    return ResponseEntity.ok().overrideSerde(true).body(generateOpenApiSpec());
   }
 }
