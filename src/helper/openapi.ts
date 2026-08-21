@@ -133,6 +133,7 @@ class OpenAPIGenerator {
         }
 
         const operation: OpenAPIV3.OperationObject = {
+          operationId: `${controllerClass.name}_${route.fnName}`,
           responses,
           summary: routeSchema?.summary,
           description: routeSchema?.description,

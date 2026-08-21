@@ -435,6 +435,43 @@ describe("openapi", () => {
       });
     });
 
+    describe("operationId", () => {
+      it("should namespace with the class name and fnName", () => {
+        @Controller({ prefix: "/users" })
+        class UserController {
+          @GET("/:id")
+          getUser() {}
+        }
+
+        const spec = generateOpenApiSpec();
+        expect(spec.paths["/users/{id}"]?.get?.operationId).toBe(
+          "UserController_getUser",
+        );
+      });
+
+      it("should stay unique across controllers with colliding fnNames", () => {
+        @Controller({ prefix: "/users" })
+        class UserController {
+          @GET()
+          get() {}
+        }
+
+        @Controller({ prefix: "/posts" })
+        class PostController {
+          @GET()
+          get() {}
+        }
+
+        const spec = generateOpenApiSpec();
+        expect(spec.paths["/users"]?.get?.operationId).toBe(
+          "UserController_get",
+        );
+        expect(spec.paths["/posts"]?.get?.operationId).toBe(
+          "PostController_get",
+        );
+      });
+    });
+
     describe("error handling", () => {
       it("should throw error for regex paths", () => {
         @Controller({ prefix: "/test" })
