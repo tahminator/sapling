@@ -356,7 +356,14 @@ Validate and transform request request & response inputs / outputs.
 
 These decorators accept any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validation library (Zod, Valibot, ArkType, etc.).
 
-If validation fails, a `ParserError` is thrown. You may register `DefaultParserErrorMiddleware` for default error handling or write your own:
+If validation fails, a `ParserError` is thrown. You may register `DefaultParserErrorMiddleware` for default error handling or write your own.
+
+The decorators are also checked at compile time against the handler's own types:
+
+- `@RequestBody` / `@RequestParam` / `@RequestQuery`: the schema's output must be assignable to the matching `Request<Params, any, Body, Query>` type argument. A plain `Request` (Express defaults) is not checked.
+- `@ResponseBody`: every `ResponseEntity<T>` body the handler returns must be assignable to the schema's input. Extra fields are allowed, since the schema strips them.
+
+A mismatch fails to compile with `the @RequestParam schema and the handler type disagree`, followed by both types.
 
 ```typescript
 import { z } from "zod";
@@ -370,22 +377,19 @@ const ListUserIdsResponseSchema = z.array(z.object({ id: z.int() }));
 class UserController {
   @RequestBody(CreateUserSchema)
   @POST()
-  createUser(request: Request): ResponseEntity<User> {
-    // request.body has been fully validated and rewritten. you can safely assert the type!
-    const requestBody = request.body as unknown as z.infer<CreateUserSchema>;
-  
-    const user = this.database.user.create(requestBody.name, requestBody.age)
+  createUser(
+    request: Request<{}, unknown, z.infer<typeof CreateUserSchema>>,
+  ): ResponseEntity<User> {
+    // request.body has been fully validated and rewritten, and the decorator checks this type against the schema
+    const user = this.database.user.create(request.body.name, request.body.age);
 
     return ResponseEntity.ok().body(user);
   }
 
   @RequestParam(UserParamsSchema)
   @GET("/:id")
-  getUser(request: Request): ResponseEntity<z.infer<typeof UserParamsSchema>> {
-    // request.params has been fully validated and rewritten. you can safely assert the type!
-    const params = request.params as unknown as z.infer<typeof UserParamsSchema>;
-
-    const user = this.database.user.findById(params.id);
+  getUser(request: Request<z.infer<typeof UserParamsSchema>>): ResponseEntity<User> {
+    const user = this.database.user.findById(request.params.id);
 
     return ResponseEntity.ok().body(user);
   }
@@ -393,11 +397,10 @@ class UserController {
   @RequestQuery(ListUsersQuerySchema)
   @ResponseBody(ListUserIdsResponseSchema) // since we have this annotation, it will a) strip all extra fields & b) throw if we are missing any expected fields.
   @GET()
-  listUserIds(request: Request): ResponseEntity<z.infer<typeof ListUserIdsResponseSchema>> {
-    // request.query has been fully validated and rewritten. you can safely assert the type!
-    const query = request.query as unknown as z.infer<typeof ListUsersQuerySchema>;
-
-    const userIds = this.database.user.findAll({ page: query.page }).map(u => u.id);
+  listUserIds(
+    request: Request<{}, unknown, unknown, z.infer<typeof ListUsersQuerySchema>>,
+  ): ResponseEntity<z.infer<typeof ListUserIdsResponseSchema>> {
+    const userIds = this.database.user.findAll({ page: request.query.page }).map(u => u.id);
 
     return ResponseEntity.ok().body(userIds);
   }
@@ -570,8 +573,10 @@ class UserController {
   @RequestBody(CreateUserSchema)
   @ResponseBody(UserSchema)
   @POST()
-  createUser(request: Request): ResponseEntity<z.infer<typeof UserSchema>> {
-    const body = request.body as z.infer<typeof CreateUserSchema>;
+  createUser(
+    request: Request<{}, unknown, z.infer<typeof CreateUserSchema>>,
+  ): ResponseEntity<z.infer<typeof UserSchema>> {
+    const body = request.body;
     return ResponseEntity.status(HttpStatus.CREATED).body({...});
   }
 }
