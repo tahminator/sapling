@@ -79,7 +79,7 @@ type Mismatch<Decorator extends string, SchemaType, HandlerType> = [
 ];
 
 // the handler if `From` is assignable to `To`. a tuple the handler can't be assigned to if not
-type Checked<Fn, From, To, Error> = [From, To, Error] extends unknown ? Fn : Fn;
+type Checked<Fn, From, To, Error> = [From] extends [To] ? Fn : Error;
 
 /**
  * Validates the returned `ResponseEntity` body. Fails to compile if the handler
