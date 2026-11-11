@@ -26,18 +26,15 @@ export type ValidatorSchema = {
 
 type Schema = StandardSchemaV1 & StandardJSONSchemaV1;
 
-// `never[]` so a handler with any parameter list is assignable
+// `never[]` accepts any parameter list
 type Handler = (...args: never[]) => unknown;
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
-// distributes, so `ResponseEntity<A> | RedirectView` yields `A`
+// distributes over unions like `ResponseEntity<A> | RedirectView`
 type BodyOf<Result> = Result extends ResponseEntity<infer Body> ? Body : never;
 
-/**
- * Body type of every `ResponseEntity` the handler can return,
- * or `never` when it returns none (or returns `any`).
- */
+// `never` when the handler returns no `ResponseEntity` (or `any`)
 type ResponseBodyOf<Fn extends Handler> =
   IsAny<Awaited<ReturnType<Fn>>> extends true ? never
   : BodyOf<Awaited<ReturnType<Fn>>>;
@@ -49,10 +46,7 @@ type AsRequest<T> =
   : T extends RequestLike ? T
   : never;
 
-/**
- * The handler's request parameter: the first parameter for routes,
- * the second for error middlewares (`err, request, response, next`).
- */
+// first parameter, or second for error middlewares (`err, request, ...`)
 type RequestOf<Fn extends Handler> =
   Fn extends (
     (first: infer First, second: infer Second, ...rest: never[]) => unknown
@@ -62,11 +56,7 @@ type RequestOf<Fn extends Handler> =
     : AsRequest<First>
   : never;
 
-/**
- * `true` when the handler left the type at Express's default
- * (`any` body, `ParamsDictionary` params, `ParsedQs` query) or has no request parameter,
- * in which case there is nothing to compare the schema against.
- */
+// left at Express's defaults, so there is nothing to check
 type IsUndeclared<Declared> =
   IsAny<Declared> extends true ? true
   : [Declared] extends [never] ? true
@@ -78,13 +68,10 @@ type Mismatch<Decorator extends string, SchemaType, HandlerType> = [
   { schema: SchemaType; handler: HandlerType },
 ];
 
-// the handler if `From` is assignable to `To`. a tuple the handler can't be assigned to if not
+// `Fn` if `From` fits `To`, otherwise a type `Fn` can't be assigned to
 type Checked<Fn, From, To, Error> = [From] extends [To] ? Fn : Error;
 
-/**
- * Validates the returned `ResponseEntity` body. Fails to compile if the handler
- * returns a body that the schema does not accept as input.
- */
+// returned body must be accepted by the schema's input
 type CheckedResponseBody<S extends Schema, Fn extends Handler> =
   [ResponseBodyOf<Fn>] extends [never] ? Fn
   : Checked<
@@ -98,10 +85,7 @@ type CheckedResponseBody<S extends Schema, Fn extends Handler> =
       >
     >;
 
-/**
- * Validates `request[Key]`. Fails to compile if the handler declares a type for it
- * (e.g. `Request<Params, any, Body, Query>`) that the schema output is not assignable to.
- */
+// schema output must fit the handler's declared `request[Key]`
 type CheckedRequest<
   S extends Schema,
   Fn extends Handler,

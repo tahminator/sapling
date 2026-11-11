@@ -5,6 +5,8 @@ import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import type { TypedRequest } from "../types";
+
 import { ParserError, RedirectView, ResponseEntity } from "../helper";
 import {
   RequestBody,
@@ -95,9 +97,7 @@ describe("request annotation + parsing", () => {
   });
 });
 
-// These cases are enforced by `pnpm typecheck` (tsc -b includes test files):
-// each `@ts-expect-error` fails the build if the decorator stops rejecting that handler,
-// and each unannotated case fails it if the decorator starts rejecting a valid handler.
+// enforced by `pnpm typecheck`: an unused `@ts-expect-error` or a new error fails the build
 describe("compile-time schema checks", () => {
   const Params = z.object({ id: z.coerce.number() });
   const Query = z.object({ page: z.coerce.number() });
@@ -125,15 +125,15 @@ describe("compile-time schema checks", () => {
 
   it("rejects request types that disagree with the schema output", () => {
     class C {
-      // @ts-expect-error schema coerces id to number, handler reads a string
+      // @ts-expect-error id: number vs string
       @RequestParam(Params)
       params(_req: Request<{ id: string }>) {}
 
-      // @ts-expect-error schema coerces page to number, handler reads a string
+      // @ts-expect-error page: number vs string
       @RequestQuery(Query)
       query(_req: Request<{}, unknown, unknown, { page: string }>) {}
 
-      // @ts-expect-error handler reads `age`, which the schema never produces
+      // @ts-expect-error schema has no `age`
       @RequestBody(Body)
       body(_req: Request<{}, unknown, Body & { age: number }>) {}
     }
@@ -150,12 +150,43 @@ describe("compile-time schema checks", () => {
     void C;
   });
 
+  it("checks overridden TypedRequest slots and skips omitted ones", () => {
+    class C {
+      @RequestParam(Params)
+      @RequestQuery(Query)
+      @RequestBody(Body)
+      all(_req: TypedRequest<{ params: Params; body: Body; query: Query }>) {}
+
+      @RequestParam(Params)
+      @RequestQuery(Query)
+      @RequestBody(Body)
+      onlyBody(_req: TypedRequest<{ body: Body }>) {}
+
+      // @ts-expect-error id: number vs string
+      @RequestParam(Params)
+      badParams(_req: TypedRequest<{ params: { id: string } }>) {}
+
+      // @ts-expect-error page: number vs string
+      @RequestQuery(Query)
+      badQuery(_req: TypedRequest<{ body: Body; query: { page: string } }>) {}
+    }
+    void C;
+  });
+
+  it("rejects a TypedRequest with no known keys", () => {
+    // @ts-expect-error `parms` is not a key
+    type Typo = TypedRequest<{ parms: Params }>;
+
+    const unused: Typo[] = [];
+    void unused;
+  });
+
   it("checks the request of a (request, response, next) route", () => {
     class C {
       @RequestParam(Params)
       ok(_req: Request<Params>, _res: Response, _next: NextFunction) {}
 
-      // @ts-expect-error params mismatch is caught with extra parameters present
+      // @ts-expect-error id: number vs string
       @RequestParam(Params)
       bad(_req: Request<{ id: string }>, _res: Response, _next: NextFunction) {}
     }
@@ -172,7 +203,7 @@ describe("compile-time schema checks", () => {
         _next: NextFunction,
       ) {}
 
-      // @ts-expect-error body mismatch is caught after the `err` parameter
+      // @ts-expect-error name: string vs number
       @RequestBody(Body)
       bad(
         _err: unknown,
@@ -207,19 +238,19 @@ describe("compile-time schema checks", () => {
 
   it("rejects returned bodies the schema does not accept", () => {
     class C {
-      // @ts-expect-error schema wants id: string
+      // @ts-expect-error id: string vs number
       @ResponseBody(Out)
       sync(): ResponseEntity<{ id: number }> {
         return ResponseEntity.ok().body({ id: 1 });
       }
 
-      // @ts-expect-error mismatch is found through the Promise
+      // @ts-expect-error through a Promise
       @ResponseBody(Out)
       async promised(): Promise<ResponseEntity<{ id: number }>> {
         return ResponseEntity.ok().body({ id: 1 });
       }
 
-      // @ts-expect-error mismatch is found inside a union with RedirectView
+      // @ts-expect-error inside a union with RedirectView
       @ResponseBody(Out)
       orRedirect(): ResponseEntity<{ id: number }> | RedirectView {
         return RedirectView.redirect("/");

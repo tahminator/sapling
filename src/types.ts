@@ -56,4 +56,17 @@ export type ExpressMiddlewareFn = (
   $3: NextFunction,
 ) => void;
 
+/**
+ * Express `Request` with named generics, e.g. `TypedRequest<{ body: Body }>`.
+ * Omitted keys keep Express's defaults.
+ */
+export type TypedRequest<
+  T extends { params?: unknown; body?: unknown; query?: unknown },
+> = Request<
+  T extends { params: infer P } ? P : Request["params"],
+  unknown,
+  T extends { body: infer B } ? B : Request["body"],
+  T extends { query: infer Q } ? Q : Request["query"]
+>;
+
 // THE SAUCE:⠀
