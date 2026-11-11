@@ -57,60 +57,16 @@ export type ExpressMiddlewareFn = (
 ) => void;
 
 /**
- * Types that {@link TypedRequest} can override. Every key is optional;
- * an omitted key keeps Express's default for that slot.
- */
-export type RequestTypes = {
-  /** `request.params`. Defaults to `ParamsDictionary`. */
-  params?: unknown;
-  /** `request.body`. Defaults to `any`. */
-  body?: unknown;
-  /** `request.query`. Defaults to `ParsedQs`. */
-  query?: unknown;
-  /** Body type of `request.res`. Defaults to `any`. */
-  resBody?: unknown;
-  /** `request.res.locals`. Defaults to `Record<string, any>`. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  locals?: Record<string, any>;
-};
-
-type Slot<T, Key extends keyof RequestTypes, Default> =
-  Key extends keyof T ? T[Key] : Default;
-
-/**
- * Express `Request` with named slots instead of positional generics.
- *
- * `TypedRequest<{ body: Body }>` is `Request<ParamsDictionary, any, Body, ParsedQs>`.
- * Slots left at Express's defaults are not checked by `@RequestParam`, `@RequestBody`
- * and `@RequestQuery`; overridden slots are. Unknown keys are rejected.
- *
- * @example
- * ```ts
- * @RequestParam(UserParamsSchema)
- * @RequestBody(UpdateUserSchema)
- * @PUT("/:id")
- * updateUser(
- *   request: TypedRequest<{
- *     params: z.infer<typeof UserParamsSchema>;
- *     body: z.infer<typeof UpdateUserSchema>;
- *   }>,
- * ) {}
- * ```
+ * Express `Request` with named generics, e.g. `TypedRequest<{ body: Body }>`.
+ * Omitted keys keep Express's defaults.
  */
 export type TypedRequest<
-  T extends RequestTypes & {
-    [Key in Exclude<keyof T, keyof RequestTypes>]: never;
-  },
+  T extends { params?: unknown; body?: unknown; query?: unknown },
 > = Request<
-  Slot<T, "params", Request["params"]>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Slot<T, "resBody", any>,
-  Slot<T, "body", Request["body"]>,
-  Slot<T, "query", Request["query"]>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends { locals: infer Locals extends Record<string, any> } ? Locals
-  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Record<string, any>
+  T extends { params: infer P } ? P : Request["params"],
+  unknown,
+  T extends { body: infer B } ? B : Request["body"],
+  T extends { query: infer Q } ? Q : Request["query"]
 >;
 
 // THE SAUCE:⠀

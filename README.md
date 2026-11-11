@@ -360,7 +360,7 @@ If validation fails, a `ParserError` is thrown. You may register `DefaultParserE
 
 The decorators are also checked at compile time against the handler's own types:
 
-- `@RequestBody` / `@RequestParam` / `@RequestQuery`: the schema's output must be assignable to the type the handler declares for that part of the request. Declare it with `TypedRequest<{ params?, body?, query?, resBody?, locals? }>`, which is Express's `Request` with named slots; omitted slots keep Express's defaults and are not checked. Unknown keys are rejected.
+- `@RequestBody` / `@RequestParam` / `@RequestQuery`: the schema's output must be assignable to the type the handler declares for that part of the request. Declare it with `TypedRequest<{ params?, body?, query? }>`, which is Express's `Request` with named generics; omitted keys keep Express's defaults and are not checked.
 - `@ResponseBody`: every `ResponseEntity<T>` body the handler returns must be assignable to the schema's input. Extra fields are allowed, since the schema strips them.
 
 A mismatch fails to compile with `the @RequestParam schema and the handler type disagree`, followed by both types.
@@ -380,7 +380,7 @@ class UserController {
   createUser(
     request: TypedRequest<{ body: z.infer<typeof CreateUserSchema> }>,
   ): ResponseEntity<User> {
-    // request.body has been fully validated and rewritten, and the decorator checks this type against the schema
+    // request.body is validated at runtime and checked against the schema at compile time
     const user = this.database.user.create(request.body.name, request.body.age);
 
     return ResponseEntity.ok().body(user);
