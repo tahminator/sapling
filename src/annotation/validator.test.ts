@@ -5,6 +5,8 @@ import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import type { TypedRequest } from "../types";
+
 import { ParserError, RedirectView, ResponseEntity } from "../helper";
 import {
   RequestBody,
@@ -148,6 +150,42 @@ describe("compile-time schema checks", () => {
       handle(_req: Request) {}
     }
     void C;
+  });
+
+  it("checks overridden TypedRequest slots and skips omitted ones", () => {
+    class C {
+      @RequestParam(Params)
+      @RequestQuery(Query)
+      @RequestBody(Body)
+      all(_req: TypedRequest<{ params: Params; body: Body; query: Query }>) {}
+
+      // params and query are omitted, so they keep Express's defaults and are not checked
+      @RequestParam(Params)
+      @RequestQuery(Query)
+      @RequestBody(Body)
+      onlyBody(_req: TypedRequest<{ body: Body }>) {}
+
+      // @ts-expect-error overridden params disagree with the schema output
+      @RequestParam(Params)
+      badParams(_req: TypedRequest<{ params: { id: string } }>) {}
+
+      // @ts-expect-error overridden query disagrees with the schema output
+      @RequestQuery(Query)
+      badQuery(_req: TypedRequest<{ body: Body; query: { page: string } }>) {}
+    }
+    void C;
+  });
+
+  it("rejects unknown TypedRequest keys instead of falling back to defaults", () => {
+    // @ts-expect-error `parms` is not a slot
+    type Typo = TypedRequest<{ parms: Params }>;
+    // @ts-expect-error `bdy` is not a slot, even next to a valid one
+    type TypoWithValid = TypedRequest<{ params: Params; bdy: Body }>;
+    // @ts-expect-error locals must be an object
+    type BadLocals = TypedRequest<{ locals: string }>;
+
+    const unused: [Typo?, TypoWithValid?, BadLocals?] = [];
+    void unused;
   });
 
   it("checks the request of a (request, response, next) route", () => {

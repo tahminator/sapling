@@ -360,7 +360,7 @@ If validation fails, a `ParserError` is thrown. You may register `DefaultParserE
 
 The decorators are also checked at compile time against the handler's own types:
 
-- `@RequestBody` / `@RequestParam` / `@RequestQuery`: the schema's output must be assignable to the matching `Request<Params, any, Body, Query>` type argument. A plain `Request` (Express defaults) is not checked.
+- `@RequestBody` / `@RequestParam` / `@RequestQuery`: the schema's output must be assignable to the type the handler declares for that part of the request. Declare it with `TypedRequest<{ params?, body?, query?, resBody?, locals? }>`, which is Express's `Request` with named slots; omitted slots keep Express's defaults and are not checked. Unknown keys are rejected.
 - `@ResponseBody`: every `ResponseEntity<T>` body the handler returns must be assignable to the schema's input. Extra fields are allowed, since the schema strips them.
 
 A mismatch fails to compile with `the @RequestParam schema and the handler type disagree`, followed by both types.
@@ -378,7 +378,7 @@ class UserController {
   @RequestBody(CreateUserSchema)
   @POST()
   createUser(
-    request: Request<{}, unknown, z.infer<typeof CreateUserSchema>>,
+    request: TypedRequest<{ body: z.infer<typeof CreateUserSchema> }>,
   ): ResponseEntity<User> {
     // request.body has been fully validated and rewritten, and the decorator checks this type against the schema
     const user = this.database.user.create(request.body.name, request.body.age);
@@ -388,7 +388,7 @@ class UserController {
 
   @RequestParam(UserParamsSchema)
   @GET("/:id")
-  getUser(request: Request<z.infer<typeof UserParamsSchema>>): ResponseEntity<User> {
+  getUser(request: TypedRequest<{ params: z.infer<typeof UserParamsSchema> }>): ResponseEntity<User> {
     const user = this.database.user.findById(request.params.id);
 
     return ResponseEntity.ok().body(user);
@@ -398,7 +398,7 @@ class UserController {
   @ResponseBody(ListUserIdsResponseSchema) // since we have this annotation, it will a) strip all extra fields & b) throw if we are missing any expected fields.
   @GET()
   listUserIds(
-    request: Request<{}, unknown, unknown, z.infer<typeof ListUsersQuerySchema>>,
+    request: TypedRequest<{ query: z.infer<typeof ListUsersQuerySchema> }>,
   ): ResponseEntity<z.infer<typeof ListUserIdsResponseSchema>> {
     const userIds = this.database.user.findAll({ page: request.query.page }).map(u => u.id);
 
@@ -574,7 +574,7 @@ class UserController {
   @ResponseBody(UserSchema)
   @POST()
   createUser(
-    request: Request<{}, unknown, z.infer<typeof CreateUserSchema>>,
+    request: TypedRequest<{ body: z.infer<typeof CreateUserSchema> }>,
   ): ResponseEntity<z.infer<typeof UserSchema>> {
     const body = request.body;
     return ResponseEntity.status(HttpStatus.CREATED).body({...});
